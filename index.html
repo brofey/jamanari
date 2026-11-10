@@ -663,17 +663,57 @@ function genWorld(seed){
       }
       if (!ok) continue;
       placed.push({ x, z, cr });
-      const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT);
-      mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true;
-      const it = { t, x, z, y: G.hh * sc, s, cr, sc, ry, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rnd() * 3, mv: false, hp: rnd() * 6, ph: rnd() * 6, pop: 0, spd: 0, scared: false };
-      mesh.position.set(x, it.y, z); world.add(mesh); items.push(it);
+      addItem(t, v, x, z, sc, ry, drv, rnd);
+    }
+  }
+}
+function addItem(t, v, x, z, sc, ry, drv, rnd){
+  const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
+  mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true;
+  const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rnd() * 3, mv: false, hp: rnd() * 6, ph: rnd() * 6, pop: 0, spd: 0, scared: false, grow: 1 };
+  mesh.position.set(x, it.y, z); world.add(mesh); items.push(it);
+  return it;
+}
+
+// ————————————————————————————— досыпка: если рядом нечего катать подходящего размера, подкидываем
+// Мир расставлен кольцами по размеру, поэтому в стороне от «своего» кольца бывает пусто.
+const FILL_TARGET = 7, FILL_MAX = 600;
+let fillT = 0, fillN = 0;
+function refill(){
+  if (unlockI >= UNL.length || fillN >= FILL_MAX) return;          // открыт весь ряд — пусть дочищает остров
+  const hi = R / PICK, lo = hi * 0.3, D = camD * 2.6 + 6;
+  let near = 0;
+  for (let i = 0; i < items.length; i++){ const it = items[i];
+    if (it.got || it.drv || it.s > hi || it.s < lo) continue;
+    const dx = it.x - bx, dz = it.z - bz; if (dx * dx + dz * dz < D * D) near++; }
+  if (near >= FILL_TARGET) return;
+  const pool = TYPES.filter(t => !t.road && t.c > 1 && t.s * 0.75 <= hi && t.s * 1.2 >= lo);
+  if (!pool.length) return;
+  for (let k = Math.min(3, FILL_TARGET - near); k > 0; k--){
+    const t = pool[(Math.random() * pool.length) | 0];
+    const sc = clamp(lerp(0.85, 1.2, Math.random()), 0.75, hi * 0.97 / t.s), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
+    for (let tr = 0; tr < 12; tr++){
+      // половину — впереди в кадре (чтобы было видно, куда катить), остальное вокруг
+      const ahead = tr < 6 && k % 2 === 1, fw = Math.atan2(-Math.cos(camYaw), -Math.sin(camYaw));
+      const a = ahead ? fw + (Math.random() - .5) * 0.9 : Math.random() * TAU;
+      const d = camD * (ahead ? lerp(0.45, 1.3, Math.random()) : lerp(0.7, 1.8, Math.random())) + R * 1.5 + cr, x = bx + Math.cos(a) * d, z = bz + Math.sin(a) * d;
+      if (Math.hypot(x, z) > ISLAND - 14 - cr || (t.s * sc >= 0.6 && onRoad(x, z, cr))) continue;
+      let clear = true;
+      for (let i = 0; i < items.length && clear; i++){ const o = items[i]; if (o.got) continue;
+        const dd = o.cr + cr + 0.05, ox = o.x - x, oz = o.z - z; if (ox * ox + oz * oz < dd * dd) clear = false; }
+      if (!clear) continue;
+      const it = addItem(t, t.v ? (Math.random() * t.v) | 0 : 0, x, z, sc, Math.random() * TAU, null, Math.random);
+      it.grow = 0; it.mesh.scale.setScalar(0.001); fillN++;
+      for (let i = 0; i < 5; i++){ const b = Math.random() * TAU, v = it.s * (1 + Math.random());
+        spawnP(x, it.y * 0.5, z, Math.cos(b) * v, it.s * (1.5 + Math.random() * 2), Math.sin(b) * v, .5, it.s * .12, 0x9ccf6a, it.s * 8); }
+      break;
     }
   }
 }
 
 function resetGame(){
   genWorld((Math.random() * 1e9) | 0);
-  R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
+  R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].s * PICK <= R) unlockI++;
@@ -778,7 +818,8 @@ function updItems(dt){
       }
     }
     const m = it.mesh, vis = dist - it.cr < cullR && it.s > minS && it.s > dist * 0.004; m.visible = vis;
-    if (vis){ m.castShadow = it.s > shS; m.position.set(it.x, it.y + hop, it.z);
+    if (it.grow < 1){ it.grow = Math.min(1, it.grow + dt * 2.2); const g = it.grow, e = 1 + 2.2 * Math.pow(g - 1, 3) + 1.2 * Math.pow(g - 1, 2); m.scale.setScalar(Math.max(0.001, it.sc * e)); }
+    if (vis){ m.castShadow = it.s > shS; m.position.set(it.x, it.y * (it.grow < 1 ? it.grow : 1) + hop, it.z);
       if (it.wob > 0.002){ it.wob *= Math.exp(-5 * dt); m.rotation.z = Math.sin(time * 28) * it.wob; m.rotation.x = Math.cos(time * 23) * it.wob * .6; }
       else if (it.wob > 0){ it.wob = 0; m.rotation.z = m.rotation.x = 0; } }
   }
@@ -881,6 +922,7 @@ function update(dt, raw){
   const br = Math.hypot(bx, bz), lim = ISLAND - 8 - R * 0.5; if (br > lim){ bx *= lim / br; bz *= lim / br; }
   const prog = items.length ? count / items.length : 0;
   if (play) Snd.setRush(prog >= 0.9);
+  if (play){ fillT -= dt; if (fillT <= 0){ fillT = 1; refill(); } }
   if (state === 'play' && items.length && count >= items.length) endGame();
   updItems(dt);
   // катим
