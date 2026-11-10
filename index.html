@@ -33,7 +33,7 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 /* ——— HUD ——— */
 #hud{position:fixed;inset:0;pointer-events:none;
   padding:calc(env(safe-area-inset-top,0px) + 12px) calc(env(safe-area-inset-right,0px) + 12px) calc(env(safe-area-inset-bottom,0px) + 14px) calc(env(safe-area-inset-left,0px) + 12px)}
-.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:8px}
+.top{display:grid;grid-template-columns:1fr auto;align-items:start;gap:8px}
 .chip{display:inline-flex;align-items:baseline;gap:8px;background:var(--panel);color:var(--ink);
   border:3px solid var(--line);border-radius:18px;box-shadow:0 4px 0 var(--line);padding:5px 14px 6px;font-weight:700}
 #size{font-family:var(--display);font-size:clamp(20px,5.4vw,30px);font-weight:400;line-height:1.1;white-space:nowrap}
@@ -46,9 +46,6 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 .bar{flex:1;height:10px;border-radius:8px;background:rgba(61,22,56,.35);border:2px solid var(--line);overflow:hidden}
 #bar{display:block;height:100%;width:0;background:var(--lime);border-radius:0 6px 6px 0}
 #nextIcon{font-size:20px;line-height:1;filter:drop-shadow(0 2px 0 rgba(61,22,56,.5))}
-#time{font-family:var(--display);font-weight:400;font-size:clamp(18px,5vw,26px);justify-self:center;font-variant-numeric:tabular-nums}
-#time.hot{background:var(--jam);color:#fff6e6;animation:tick 1s steps(2,end) infinite}
-@keyframes tick{50%{transform:scale(1.12)}}
 .btns{justify-self:end;display:flex;gap:8px;pointer-events:auto}
 .btns button{width:44px;height:44px;border-radius:14px;background:var(--panel);border:3px solid var(--line);
   box-shadow:0 4px 0 var(--line);font-weight:700;font-size:18px;line-height:1;padding:0}
@@ -97,11 +94,12 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 :root[data-theme="dark"] .card .huge{color:var(--lime)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card .huge{color:var(--lime)}}
 .card p{margin:6px 0;line-height:1.4}
+.quit{display:block;margin:16px auto 0;background:none;border:0;padding:6px 10px;color:inherit;font-size:15px;text-decoration:underline;text-underline-offset:3px;opacity:.8}
 #rank{font-weight:700;font-size:1.15em}
 #haul{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0 4px;padding:0;list-style:none}
 #haul li{border:2px solid var(--line);border-radius:12px;padding:3px 9px;font-weight:700;font-size:15px}
 #err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--plum);color:#fff6e6;font-size:18px;line-height:1.5}
-@media (prefers-reduced-motion: reduce){.pop.fly{animation-duration:.01s}#time.hot{animation:none}}
+@media (prefers-reduced-motion: reduce){.pop.fly{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -113,7 +111,6 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
       <div class="chip"><b id="size">⌀ 50 см</b><i id="combo"></i></div>
       <div class="next" title="До следующей добычи"><div class="bar"><span id="bar"></span></div><span id="nextIcon"></span></div>
     </div>
-    <div class="chip" id="time">5:00</div>
     <div class="btns">
       <button id="bMute" aria-label="Выключить звук">♪</button>
       <button id="bPause" aria-label="Пауза">❚❚</button>
@@ -127,7 +124,7 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 
 <section id="title" class="screen">
   <h1>Джем<br>катит<br>всё</h1>
-  <p>Пять минут, один пёс и всё, что плохо лежит. Начни с носков — закончи домами.</p>
+  <p>Один пёс и всё, что плохо лежит. Начни с носков — закончи домами.</p>
   <p class="how">С телефона — веди пальцем по экрану.<br>С компьютера — WASD или стрелки, пробел — гав.</p>
   <button id="bStart" class="go">Гулять</button>
   <p id="best" hidden></p>
@@ -138,6 +135,7 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
     <h2>Пауза</h2>
     <p>Джем сел и ждёт.</p>
     <button id="bResume" class="go">Гулять дальше</button>
+    <button id="bQuit" class="quit">Закончить прогулку</button>
   </div>
 </section>
 
@@ -211,7 +209,7 @@ function merge(parts, jitter){
 }
 
 /*DATA*/
-const R0 = 0.25, PICK = 1.3, GROW = 0.09, GP = 1.6, TOTAL = 300, ISLAND = 290, RR = [78, 155];
+const R0 = 0.25, PICK = 1.3, GROW = 0.09, GP = 1.6, ISLAND = 290, RR = [78, 155];
 const K = { white:0xfff6e8, cream:0xf3e3c8, silver:0xc9ccd6, black:0x2b2330, red:0xe5484d, pink:0xff8fab, orange:0xff9f43,
   yellow:0xffd23f, lime:0xc8e83c, green:0x5cb85c, dgreen:0x2f8f5b, teal:0x3fb8af, blue:0x4d8fe0, sky:0x8fd3f4, plum:0x5a2a5c,
   grey:0x9aa0a6, lgrey:0xd5d9dd, dgrey:0x555b66, wood:0xc08a55, dwood:0x7b4a2d, sand:0xe8cf9a, glass:0xbfe6f5, skin:0xf2c29b, win:0x2f4858 };
@@ -622,9 +620,9 @@ const Snd = (() => {
 })();
 
 // ————————————————————————————— состояние игры
-let state = 'title', time = 0, timeLeft = TOTAL, R = R0, Rs = R0, bx = 0, bz = 0, vx = 0, vz = 0, ha = 0.35, dogX = .6, dogZ = .15;
+let state = 'title', time = 0, R = R0, Rs = R0, bx = 0, bz = 0, vx = 0, vz = 0, ha = 0.35, dogX = .6, dogZ = .15;
 let count = 0, combo = 0, lastPick = -9, lastPop = -9, lastBonk = -9, lastWarn = -9, lastHonk = -9, hitstop = 0, shake = 0, ballPop = 0, flash = 0;
-let camD = 3.6, camP = 0.3, camYaw = 0.5, camY = 0.2, ctX = 0, ctZ = 0, fovK = 0, runPh = 0, spN = 0, blinkT = 2, tiltT = 0, tiltV = 0, tiltA = 0, barkT = 9, endT = 0, lastSec = -1, dustT = 0, jumpY = 0, jumpV = 0;
+let camD = 3.6, camP = 0.3, camYaw = 0.5, camY = 0.2, ctX = 0, ctZ = 0, fovK = 0, runPh = 0, spN = 0, blinkT = 2, tiltT = 0, tiltV = 0, tiltA = 0, barkT = 9, endT = 0, dustT = 0, jumpY = 0, jumpV = 0;
 let tierN = 0, unlockI = 0, toastQ = [], toastT = 0, stats = {};
 const TIERS = [0.45, 1.0, 2.2, 5.0];
 const UNL = TYPES.slice().sort((a, b) => a.s - b.s);
@@ -675,16 +673,16 @@ function genWorld(seed){
 
 function resetGame(){
   genWorld((Math.random() * 1e9) | 0);
-  R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; timeLeft = TOTAL; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
-  ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; lastSec = -1; jumpY = jumpV = 0;
+  R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
+  ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].s * PICK <= R) unlockI++;
   for (const p of trailP) p.t = -99;
-  ui.size = ui.time = ui.combo = ui.icon = ''; $('time').classList.remove('hot');
+  ui.size = ui.combo = ui.icon = '';
 }
 
 // ————————————————————————————— интерфейс
-const ui = { size: '', time: '', combo: '', icon: '' };
+const ui = { size: '', combo: '', icon: '' };
 const fmt = r => { const d = r * 2; return d < 1 ? Math.round(d * 100) + ' см' : (d < 10 ? d.toFixed(2) : d.toFixed(1)).replace('.', ',') + ' м'; };
 const pops = []; let popI = 0;
 for (let i = 0; i < 10; i++){ const d = document.createElement('div'); d.className = 'pop'; $('pops').appendChild(d); pops.push(d); }
@@ -699,8 +697,6 @@ function popup(text, x, y, z, big){
 function toast(text){ const el = $('toast'); el.textContent = text; el.classList.add('on'); toastT = 2.6; }
 function updHud(){
   const s = '⌀ ' + fmt(R); if (s !== ui.size){ ui.size = s; $('size').textContent = s; }
-  const tl = Math.max(0, Math.ceil(timeLeft)), ts = Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
-  if (ts !== ui.time){ ui.time = ts; $('time').textContent = ts; $('time').classList.toggle('hot', tl <= 10 && state === 'play'); }
   const cs = combo > 1 && time - lastPick < 1.6 ? '×' + combo : '';
   if (cs !== ui.combo){ ui.combo = cs; const el = $('combo'); el.textContent = cs; if (cs){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } }
   const nx = UNL[unlockI], prev = unlockI > 0 ? UNL[unlockI - 1].s * PICK : R0;
@@ -842,23 +838,24 @@ function setPause(p){
   if (p && state === 'play'){ state = 'pause'; $('pause').hidden = false; Snd.suspend(); joy.on = false; joyEl.classList.remove('on'); }
   else if (!p && state === 'pause'){ state = 'play'; $('pause').hidden = true; Snd.resume(); last = performance.now(); canvas.focus(); }
 }
+function quitWalk(){ if (state !== 'pause') return; $('pause').hidden = true; Snd.resume(); last = performance.now(); endGame(); }
 function again(){ if (state !== 'end') return; $('end').hidden = true; resetGame(); state = 'play'; $('hud').hidden = false; Snd.start(); canvas.focus(); }
 function endGame(){
   state = 'end'; endT = 0; joy.on = false; joyEl.classList.remove('on'); Snd.stopMusic(); Snd.end(); confetti(60, Math.pow(R / R0, .8)); jumpV = 3.2;
-  $('time').classList.remove('hot');
   const d = R * 2, all = count >= items.length, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : 'Джемзилла';
   $('endSize').textContent = '⌀ ' + fmt(R); $('rank').textContent = 'Звание: ' + rank;
   $('endCount').textContent = 'В коме ' + count + ' ' + plural(count, 'вещь', 'вещи', 'вещей') + '.';
   const ul = $('haul'); ul.textContent = '';
   Object.keys(stats).sort((a, b) => stats[b].n - stats[a].n).slice(0, 8).forEach(n => { const li = document.createElement('li'); li.textContent = stats[n].e + ' ' + n + ' ×' + stats[n].n; ul.appendChild(li); });
   const nx = UNL[unlockI]; $('end').querySelector('h2').textContent = all ? 'На острове больше ничего нет' : 'Прогулка окончена';
-  $('endHint').textContent = all ? 'Скатано всё до последнего носка, и ещё ' + Math.ceil(timeLeft) + ' с в запасе.' : nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.s * PICK) + '.' : 'Джему по зубам было вообще всё.';
+  $('endHint').textContent = all ? 'Скатано всё до последнего носка.' : nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.s * PICK) + '.' : 'Джему по зубам было вообще всё.';
   const rec = R > best; if (rec){ best = R; try { localStorage.setItem('jem-best', String(R)); } catch (e) {} }
   $('endBest').textContent = rec ? 'Это новый рекорд!' : 'Рекорд: ⌀ ' + fmt(best);
 }
 function plural(n, a, b, c){ const m = n % 100, k = n % 10; return m > 10 && m < 20 ? c : k === 1 ? a : k > 1 && k < 5 ? b : c; }
 $('bStart').addEventListener('click', startGame);
 $('bResume').addEventListener('click', () => setPause(false));
+$('bQuit').addEventListener('click', quitWalk);
 $('bPause').addEventListener('click', () => setPause(true));
 $('bMute').addEventListener('click', mute);
 $('bAgain').addEventListener('click', again);
@@ -882,7 +879,8 @@ function update(dt, raw){
   vx += (ix * vm - vx) * a; vz += (-iy * vm - vz) * a;
   const ox = bx, oz = bz; bx += vx * dt; bz += vz * dt;
   const br = Math.hypot(bx, bz), lim = ISLAND - 8 - R * 0.5; if (br > lim){ bx *= lim / br; bz *= lim / br; }
-  if (play){ timeLeft -= dt; const sec = Math.ceil(timeLeft); if (sec !== lastSec){ lastSec = sec; if (sec <= 10 && sec > 0) Snd.tick(); if (sec === 30) Snd.setRush(true); } if (timeLeft <= 0){ timeLeft = 0; endGame(); } }
+  const prog = items.length ? count / items.length : 0;
+  if (play) Snd.setRush(prog >= 0.9);
   if (state === 'play' && items.length && count >= items.length) endGame();
   updItems(dt);
   // катим
@@ -970,8 +968,8 @@ function updCamera(dt){
   camera.fov = (portrait ? 54 : 42) + (RM ? 0 : fovK * 5);
   camera.near = camD * 0.05; camera.far = Math.max(2600, camD * 16); camera.updateProjectionMatrix();
   sky.position.copy(camera.position); sky.scale.setScalar(camera.far * 0.9);
-  // время суток: к концу прогулки — закат
-  const td = clamp(1 - timeLeft / TOTAL, 0, 1);
+  // время суток: чем меньше осталось на острове, тем ближе закат
+  const td = items.length ? clamp(count / items.length, 0, 1) : 0;
   dayCol(DAY.sun, td, sun.color); dayCol(DAY.sky, td, hemi.color); dayCol(DAY.gnd, td, hemi.groundColor);
   dayCol(DAY.top, td, skyMat.uniforms.top.value); dayCol(DAY.hor, td, skyMat.uniforms.hor.value); scene.fog.color.copy(skyMat.uniforms.hor.value);
   scene.fog.near = Math.max(40, camD * 3); scene.fog.far = Math.max(520, camD * 9);
@@ -1001,7 +999,7 @@ function frame(now){
 }
 
 resize(); resetGame(); state = 'title';
-window.__jem = { get R(){ return R; }, set R(v){ R = v; }, items, TYPES, get state(){ return state; }, startGame, endGame, pickup, setTime(v){ timeLeft = v; } };
+window.__jem = { get R(){ return R; }, set R(v){ R = v; }, items, TYPES, get state(){ return state; }, startGame, endGame, pickup };
 requestAnimationFrame(frame);
 })();
 </script>
