@@ -583,7 +583,7 @@ const J = {};
 // ком
 const ballG = new T.Group(); scene.add(ballG);
 const core = (function(){
-  const g = new T.SphereGeometry(1, 14, 9).toNonIndexed(), p = g.attributes.position, col = new Float32Array(p.count * 3), a = new T.Color(0xe23b6d), b = new T.Color(0xfff3dc);
+  const g = new T.SphereGeometry(1, 16, 9).toNonIndexed(), p = g.attributes.position, col = new Float32Array(p.count * 3), a = new T.Color(0xe23b6d), b = new T.Color(0xfff3dc);
   for (let i = 0; i < p.count; i += 3){
     const cx = (p.getX(i) + p.getX(i+1) + p.getX(i+2)) / 3, cz = (p.getZ(i) + p.getZ(i+1) + p.getZ(i+2)) / 3;
     const c = Math.floor((Math.atan2(cz, cx) + PI) / TAU * 8 + 0.001) % 2 ? a : b, j = 0.95 + Math.random() * 0.1;
