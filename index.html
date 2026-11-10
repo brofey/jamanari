@@ -294,6 +294,16 @@ const TYPES = [
 {k:'mill',n:'Мельница',e:'🌬️',d:[9.5,15.5,6],c:4,r:[120,265],b:()=>[cyl(1.6,3,11,8,K.cream,0,5.5,0),cone(2.1,2.2,8,K.red,0,12.1,0),box(.5,13,.15,K.wood,0,10.5,2.2,0,0,PI/4),box(.5,13,.15,K.wood,0,10.5,2.2,0,0,-PI/4),cyl(.4,.4,1,6,K.dwood,0,10.5,1.8,H,0,0)]},
 {k:'block',n:'Пятиэтажка',e:'🏢',d:[22,15,9],c:6,r:[150,265],b:()=>{const p=[box(22,15,9,0xd9d2c5,0,7.5,0),box(22.4,.5,9.4,0x8d8478,0,15.2,0)];for(let f=0;f<5;f++)for(let i=0;i<8;i++)p.push(box(1.5,1.5,9.1,(f*3+i)%4?0x5b7a99:K.yellow,-9.1+i*2.6,2+f*2.8,0));return p;}},
 {k:'ferris',n:'Колесо обозрения',e:'🎡',d:[21,23,4],c:1,r:[200,250],b:()=>{const p=[part(new T.TorusGeometry(10,.35,5,24),K.white,0,12,0),box(.6,13,.6,K.red,-3.5,6,1.2,0,0,-.28),box(.6,13,.6,K.red,3.5,6,1.2,0,0,.28),box(.6,13,.6,K.red,-3.5,6,-1.2,0,0,-.28),box(.6,13,.6,K.red,3.5,6,-1.2,0,0,.28),cyl(.6,.6,3,8,K.dgrey,0,12,0,H,0,0)];for(let i=0;i<8;i++){const a=i*PI/4;p.push(box(.2,10,.2,K.lgrey,Math.cos(a)*5,12+Math.sin(a)*5,0,0,0,a-H));p.push(box(1.6,1.6,1.6,[K.red,K.yellow,K.blue,K.lime][i%4],Math.cos(a)*10,11+Math.sin(a)*10,0));}return p;}},
+// ——— гиганты острова
+{k:'lighthouse',n:'Маяк',e:'🗼',d:[9,32,9],c:2,r:[262,270],b:()=>[cyl(3,4.5,24,10,K.white,0,12,0),cyl(3.4,3.9,4,10,K.red,0,8,0),cyl(3.05,3.35,4,10,K.red,0,18,0),cyl(3.4,3.4,1,10,K.dgrey,0,24.5,0),cyl(2.2,2.2,3.5,8,K.yellow,0,26.7,0),cone(3,3.5,10,K.red,0,30.2,0)]},
+{k:'circus',n:'Шапито',e:'🎪',d:[28,21,28],c:2,r:[175,255],b:()=>{const p=[cyl(14,14,8,12,K.white,0,4,0),cone(14.6,11,12,K.red,0,13.5,0),cyl(.3,.3,3,4,K.dgrey,0,20.5,0),box(2,1.2,.1,K.yellow,1,21.3,0),box(5,6,.3,K.plum,0,3,13.9)];for(let i=0;i<6;i++){const a=i*PI/3;p.push(box(1.2,8.1,.3,K.red,Math.sin(a)*14,4,Math.cos(a)*14,0,a,0));}return p;}},
+{k:'hill',n:'Холм с рощей',e:'⛰️',d:[30,15,30],c:5,r:[175,262],b:()=>[sph(15,0x86c95f,0,0,0,1,.5,1,1),cone(2.4,6,6,K.dgreen,3,9.5,2),cone(2,5,6,0x38a169,-4,9,-1),cone(2.2,6,6,K.dgreen,0,10,-4),sph(2.4,K.green,-2,8.4,4),sph(2,0x6fc76a,6,7.4,-2)]},
+{k:'tower',n:'Высотка',e:'🏙️',d:[16,50,16],c:5,r:[165,262],b:()=>{const p=[box(16,46,16,0xa9bfd1,0,23,0),box(10,3,10,K.dgrey,0,47.5,0),cyl(.3,.3,6,4,K.dgrey,0,52,0)];for(let f=0;f<11;f++)p.push(box(16.2,1.3,16.2,0x5b7a99,0,3.5+f*4,0));return p;}},
+{k:'stadium',n:'Стадион',e:'🏟️',d:[44,11,32],c:1,r:[190,240],b:()=>[box(44,.6,32,0x5cb85c,0,.3,0),box(30,.62,.4,K.white,0,.31,0),box(44,9,4,K.lgrey,0,4.5,14,-.35,0,0),box(44,9,4,K.lgrey,0,4.5,-14,.35,0,0),box(4,9,24,K.lgrey,20,4.5,0,0,0,.35),box(4,9,24,K.lgrey,-20,4.5,0,0,0,-.35),cyl(.3,.3,11,4,K.dgrey,21,5.5,15),cyl(.3,.3,11,4,K.dgrey,-21,5.5,-15)]},
+{k:'castle',n:'Замок',e:'🏰',d:[34,30,34],c:1,r:[200,250],b:()=>{const p=[box(28,12,28,0xd8cbb0,0,6,0),box(14,22,14,0xe6dbc2,0,11,0),cone(10,8,4,K.blue,0,26,0,0,PI/4,0),box(5,8,.4,K.dwood,0,4,14.1)];for(const[x,z]of[[14,14],[-14,14],[14,-14],[-14,-14]]){p.push(cyl(3.5,3.5,18,8,0xe6dbc2,x,9,z),cone(4.2,7,8,K.red,x,21.5,z));}return p;}},
+{k:'tvtower',n:'Телебашня',e:'📡',d:[10,62,10],c:1,r:[200,250],b:()=>[cyl(1.2,4.5,48,8,K.lgrey,0,24,0),cyl(5,5,4,10,K.red,0,42,0),cyl(4.2,4.2,1.5,10,K.glass,0,45,0),cyl(.8,1.2,6,6,K.white,0,50,0),cyl(.35,.35,9,4,K.red,0,57.5,0)]},
+{k:'mountain',n:'Гора',e:'🏔️',d:[70,46,70],c:3,r:[248,262],sc:[.9,1.1],b:()=>[cone(35,44,9,0x8d8794,0,22,0),cone(22,30,9,0x9d97a3,8,15,6),cone(9,10.3,9,K.white,0,39.2,0),cone(5.2,6.8,9,K.white,8,27.5,6)]},
+{k:'volcano',n:'Вулкан',e:'🌋',d:[90,50,90],c:1,r:[232,248],sc:[.95,1.05],b:()=>[cyl(12,45,46,10,0x6b5a55,0,23,0),cyl(10.5,10.5,1,10,0xff6a2a,0,46.2,0),sph(6,0xffb347,0,47,0,1,.4,1,0),cyl(2,4,10,6,0xff6a2a,10,38,22,.9,0,0)]},
 {k:'rocket',n:'Ракета',e:'🚀',d:[8,22,8],c:1,r:[215,255],b:()=>[cyl(2.2,2.6,14,10,K.white,0,10,0),cone(2.2,5,10,K.red,0,19.5,0),box(.3,5,3,K.red,3,4.5,0),box(.3,5,3,K.red,-3,4.5,0),box(3,5,.3,K.red,0,4.5,3),box(3,5,.3,K.red,0,4.5,-3),sph(.8,K.sky,0,13,2.1,1,1,.4,0),cone(1.8,3,8,K.dgrey,0,1.5,0)]}
 ];
 for (const t of TYPES){ const w = t.d[0], h = t.d[1], d = t.d[2]; t.s = 0.5 * (0.6 * Math.max(w, h, d) + 0.4 * Math.cbrt(w * h * d)); }
@@ -467,13 +477,19 @@ const J = {};
     const e = dpart(head, S, eye, sx * .066, .022, .134, .03, .032, .024, false); J.eyes.push(e);
     const hl = new T.Mesh(S, new T.MeshBasicMaterial({ color: 0xffffff })); hl.scale.set(.3, .3, .3); hl.position.set(.3 * sx + .15, .4, .75); e.add(hl);
   }
-  // уши: левое тёмное, правое белое
-  const earG = new T.ConeGeometry(.08, .16, 4); earG.rotateX(PI); earG.translate(0, -.08, 0); earG.scale(1, 1, .32);
+  // уши как у джек-рассела: короткое основание торчит вверх, на сгибе клапан-треугольник падает вперёд к глазу.
+  // Левое тёмное, правое белое. В J.ears — клапаны: они качаются на сгибе.
+  const flapS = new T.Shape(); flapS.moveTo(-.068, 0); flapS.lineTo(.068, 0); flapS.lineTo(.018, -.15); flapS.lineTo(-.01, -.14); flapS.closePath();
+  const flapG = new T.ExtrudeGeometry(flapS, { depth: .022, bevelEnabled: false }); flapG.translate(0, 0, -.011);
+  const baseG = new T.BoxGeometry(.11, .05, .03), foldG = new T.CylinderGeometry(.016, .016, .136, 6); foldG.rotateZ(H);
   J.ears = [];
   for (const sx of [1, -1]){
-    const p = new T.Group(); p.position.set(sx * .105, .1, -.01); head.add(p);
-    dpart(p, earG, sx > 0 ? dark : earIn, 0, 0, 0, 1, 1, 1);
-    p.userData = { a: 0, v: 0, sx }; J.ears.push(p);
+    const m = sx > 0 ? dark : fur, root = new T.Group(); root.position.set(sx * .1, .11, -.01); head.add(root);
+    dpart(root, baseG, m, 0, .02, 0, 1, 1, 1);
+    const f = new T.Group(); f.position.set(0, .048, .004); root.add(f);
+    dpart(f, foldG, m, 0, 0, 0, 1, 1, 1);
+    const fl = dpart(f, flapG, m, 0, 0, 0, sx, 1, 1); fl.rotation.y = sx * .25;   // зеркалим, чтобы кончик смотрел наружу
+    f.userData = { a: 0, v: 0, sx }; J.ears.push(f);
   }
   // язык
   const tg = new T.BoxGeometry(.045, .012, .1); tg.translate(0, 0, .05);
@@ -624,7 +640,7 @@ let state = 'title', time = 0, R = R0, Rs = R0, bx = 0, bz = 0, vx = 0, vz = 0, 
 let count = 0, combo = 0, lastPick = -9, lastPop = -9, lastBonk = -9, lastWarn = -9, lastHonk = -9, hitstop = 0, shake = 0, ballPop = 0, flash = 0;
 let camD = 3.6, camP = 0.3, camYaw = 0.5, camY = 0.2, ctX = 0, ctZ = 0, fovK = 0, runPh = 0, spN = 0, blinkT = 2, tiltT = 0, tiltV = 0, tiltA = 0, barkT = 9, endT = 0, dustT = 0, jumpY = 0, jumpV = 0;
 let tierN = 0, unlockI = 0, toastQ = [], toastT = 0, stats = {};
-const TIERS = [0.45, 1.0, 2.2, 5.0];
+const TIERS = [0.45, 1.0, 2.2, 5.0, 14, 40];
 const UNL = TYPES.slice().sort((a, b) => a.s - b.s);
 const items = [], attached = [];
 const geoCache = {};
@@ -641,6 +657,7 @@ function genWorld(seed){
   items.length = 0; attached.length = 0;
   const rnd = mulberry32(seed), placed = [{ x: 0, z: 0, cr: 1.3 }];
   const free = (x, z, cr) => { for (let i = 0; i < placed.length; i++){ const p = placed[i], dd = cr + p.cr, dx = p.x - x, dz = p.z - z; if (dx * dx + dz * dz < dd * dd) return false; } return true; };
+  for (const t of TYPES) t.top = 0;
   const order = TYPES.slice().sort((a, b) => b.s - a.s);
   for (const t of order){
     for (let i = 0; i < t.c; i++){
@@ -666,8 +683,12 @@ function genWorld(seed){
       addItem(t, v, x, z, sc, ry, drv, rnd);
     }
   }
+  // «Теперь по зубам» должно значить «все такие», поэтому порог — по самому крупному экземпляру вида в этом мире
+  for (const t of TYPES) if (!t.top) t.top = t.s * (t.sc ? t.sc[1] : 1.2);
+  UNL.sort((a, b) => a.top - b.top);
 }
 function addItem(t, v, x, z, sc, ry, drv, rnd){
+  if (t.s * sc > (t.top || 0)) t.top = t.s * sc;
   const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
   mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true;
   const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rnd() * 3, mv: false, hp: rnd() * 6, ph: rnd() * 6, pop: 0, spd: 0, scared: false, grow: 1 };
@@ -677,11 +698,11 @@ function addItem(t, v, x, z, sc, ry, drv, rnd){
 
 // ————————————————————————————— досыпка: если рядом нечего катать подходящего размера, подкидываем
 // Мир расставлен кольцами по размеру, поэтому в стороне от «своего» кольца бывает пусто.
-const FILL_TARGET = 7, FILL_MAX = 600;
+const FILL_TARGET = 9, FILL_MAX = 1200, FILL_CAP = ISLAND * 0.45;   // досыпаем, пока ком не станет почти с пол-острова
 let fillT = 0, fillN = 0;
 function refill(){
-  if (unlockI >= UNL.length || fillN >= FILL_MAX) return;          // открыт весь ряд — пусть дочищает остров
-  const hi = R / PICK, lo = hi * 0.3, D = camD * 2.6 + 6;
+  if (R >= FILL_CAP || fillN >= FILL_MAX) return;                   // дальше — дочищать остров
+  const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4, maxR = ISLAND - 14;
   let near = 0;
   for (let i = 0; i < items.length; i++){ const it = items[i];
     if (it.got || it.drv || it.s > hi || it.s < lo) continue;
@@ -689,15 +710,20 @@ function refill(){
   if (near >= FILL_TARGET) return;
   const pool = TYPES.filter(t => !t.road && t.c > 1 && t.s * 0.75 <= hi && t.s * 1.2 >= lo);
   if (!pool.length) return;
-  for (let k = Math.min(3, FILL_TARGET - near); k > 0; k--){
+  for (let k = Math.min(4, FILL_TARGET - near); k > 0; k--){
     const t = pool[(Math.random() * pool.length) | 0];
-    const sc = clamp(lerp(0.85, 1.2, Math.random()), 0.75, hi * 0.97 / t.s), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
+    // у гиганта самое крупное (горы) растёт вместе с комом, иначе расти было бы не из чего
+    const up = R > 40 ? Math.max(1.2, hi * 0.8 / t.s) : 1.2;
+    const sc = clamp(lerp(0.85, up, Math.random()), 0.75, hi * 0.97 / t.s), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
     for (let tr = 0; tr < 12; tr++){
       // половину — впереди в кадре (чтобы было видно, куда катить), остальное вокруг
       const ahead = tr < 6 && k % 2 === 1, fw = Math.atan2(-Math.cos(camYaw), -Math.sin(camYaw));
       const a = ahead ? fw + (Math.random() - .5) * 0.9 : Math.random() * TAU;
-      const d = camD * (ahead ? lerp(0.45, 1.3, Math.random()) : lerp(0.7, 1.8, Math.random())) + R * 1.5 + cr, x = bx + Math.cos(a) * d, z = bz + Math.sin(a) * d;
-      if (Math.hypot(x, z) > ISLAND - 14 - cr || (t.s * sc >= 0.6 && onRoad(x, z, cr))) continue;
+      const d = camD * (ahead ? lerp(0.45, 1.3, Math.random()) : lerp(0.7, 1.8, Math.random())) + R * 1.5 + cr;
+      let x = bx + Math.cos(a) * d, z = bz + Math.sin(a) * d;
+      if (Math.hypot(x, z) > maxR - cr){ if (R < 25) continue;        // огромный ком: вокруг уже море — берём любое место на острове
+        const b = Math.random() * TAU, rr = Math.sqrt(Math.random()) * Math.max(0, maxR - cr); x = Math.cos(b) * rr; z = Math.sin(b) * rr; }
+      if (t.s * sc >= 0.6 && t.s * sc < 10 && onRoad(x, z, cr)) continue;
       let clear = true;
       for (let i = 0; i < items.length && clear; i++){ const o = items[i]; if (o.got) continue;
         const dd = o.cr + cr + 0.05, ox = o.x - x, oz = o.z - z; if (ox * ox + oz * oz < dd * dd) clear = false; }
@@ -716,7 +742,7 @@ function resetGame(){
   R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
-  unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].s * PICK <= R) unlockI++;
+  unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R) unlockI++;
   for (const p of trailP) p.t = -99;
   ui.size = ui.combo = ui.icon = '';
 }
@@ -739,8 +765,8 @@ function updHud(){
   const s = '⌀ ' + fmt(R); if (s !== ui.size){ ui.size = s; $('size').textContent = s; }
   const cs = combo > 1 && time - lastPick < 1.6 ? '×' + combo : '';
   if (cs !== ui.combo){ ui.combo = cs; const el = $('combo'); el.textContent = cs; if (cs){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } }
-  const nx = UNL[unlockI], prev = unlockI > 0 ? UNL[unlockI - 1].s * PICK : R0;
-  const pr = nx ? clamp((R - prev) / Math.max(1e-6, nx.s * PICK - prev), 0, 1) : 1;
+  const nx = UNL[unlockI], prev = unlockI > 0 ? UNL[unlockI - 1].top * PICK : R0;
+  const pr = nx ? clamp((R - prev) / Math.max(1e-6, nx.top * PICK - prev), 0, 1) : 1;
   $('bar').style.width = (pr * 100).toFixed(1) + '%';
   const ic = nx ? nx.e : '👑'; if (ic !== ui.icon){ ui.icon = ic; $('nextIcon').textContent = ic; }
 }
@@ -775,7 +801,7 @@ function pickup(it){
   for (let i = attached.length - 1; i >= 0; i--){ const a = attached[i]; if (a === it) continue;
     if (attached.length > 100 && i === 0 || a.mesh.position.length() + a.s * 0.9 < cr){ ballG.remove(a.mesh); attached.splice(i, 1); } }
   // новые размеры — новая добыча
-  let any = false; while (unlockI < UNL.length && UNL[unlockI].s * PICK <= R){ if (UNL[unlockI].s > 0.3) { toastQ.push(UNL[unlockI]); any = true; } unlockI++; }
+  let any = false; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R){ if (UNL[unlockI].top > 0.3) { toastQ.push(UNL[unlockI]); any = true; } unlockI++; }
   let tn = 0; for (const th of TIERS) if (R >= th) tn++;
   if (tn > tierN){ tierN = tn; Snd.setTier(tn); Snd.fan(); if (!RM) flash = 1; confetti(40, Math.pow(R / R0, .8)); popup('Джем подрос!', bx, R * 2.8, bz, true); }
 }
@@ -882,13 +908,13 @@ function quitWalk(){ if (state !== 'pause') return; $('pause').hidden = true; Sn
 function again(){ if (state !== 'end') return; $('end').hidden = true; resetGame(); state = 'play'; $('hud').hidden = false; Snd.start(); canvas.focus(); }
 function endGame(){
   state = 'end'; endT = 0; joy.on = false; joyEl.classList.remove('on'); Snd.stopMusic(); Snd.end(); confetti(60, Math.pow(R / R0, .8)); jumpV = 3.2;
-  const d = R * 2, all = count >= items.length, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : 'Джемзилла';
+  const d = R * 2, all = count >= items.length, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : d < 60 ? 'Джемзилла' : d < 200 ? 'Гроза острова' : 'Пёс размером с остров';
   $('endSize').textContent = '⌀ ' + fmt(R); $('rank').textContent = 'Звание: ' + rank;
   $('endCount').textContent = 'В коме ' + count + ' ' + plural(count, 'вещь', 'вещи', 'вещей') + '.';
   const ul = $('haul'); ul.textContent = '';
   Object.keys(stats).sort((a, b) => stats[b].n - stats[a].n).slice(0, 8).forEach(n => { const li = document.createElement('li'); li.textContent = stats[n].e + ' ' + n + ' ×' + stats[n].n; ul.appendChild(li); });
   const nx = UNL[unlockI]; $('end').querySelector('h2').textContent = all ? 'На острове больше ничего нет' : 'Прогулка окончена';
-  $('endHint').textContent = all ? 'Скатано всё до последнего носка.' : nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.s * PICK) + '.' : 'Джему по зубам было вообще всё.';
+  $('endHint').textContent = all ? 'Скатано всё до последнего носка.' : nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.top * PICK) + '.' : 'Джему по зубам было вообще всё.';
   const rec = R > best; if (rec){ best = R; try { localStorage.setItem('jem-best', String(R)); } catch (e) {} }
   $('endBest').textContent = rec ? 'Это новый рекорд!' : 'Рекорд: ⌀ ' + fmt(best);
 }
@@ -921,7 +947,7 @@ function update(dt, raw){
   const br = Math.hypot(bx, bz), lim = ISLAND - 8 - R * 0.5; if (br > lim){ bx *= lim / br; bz *= lim / br; }
   const prog = items.length ? count / items.length : 0;
   if (play) Snd.setRush(prog >= 0.9);
-  if (play){ fillT -= dt; if (fillT <= 0){ fillT = 1; refill(); } }
+  if (play){ fillT -= dt; if (fillT <= 0){ fillT = 0.8; refill(); } }
   if (state === 'play' && items.length && count >= items.length) endGame();
   updItems(dt);
   // катим
@@ -951,8 +977,9 @@ function update(dt, raw){
   J.body.position.y = bob; J.body.rotation.x = spN * 0.13 - (barkT < 0.3 ? Math.sin(barkT / 0.3 * PI) * 0.25 : 0);
   J.body.scale.set(1 - sq * .5 + breathe, 1 + sq, 1 - sq * .5);
   // уши на пружинках
-  for (const e of J.ears){ const u = e.userData, target = -0.55 + spN * 1.25 + Math.sin(runPh * 2 + u.sx) * 0.25 * spN - (jumpY > 0 ? 0.6 : 0);
-    u.v += ((target - u.a) * 90 - u.v * 7) * dt; u.a += u.v * dt; e.rotation.x = u.a; e.rotation.z = u.sx * (0.3 + spN * 0.25); }
+  // клапан в покое лежит вперёд-вниз; на бегу и в прыжке подлетает
+  for (const e of J.ears){ const u = e.userData, target = -0.62 - spN * 0.5 - Math.sin(runPh * 2 + u.sx) * 0.2 * spN - (jumpY > 0 ? 0.6 : 0);
+    u.v += ((target - u.a) * 90 - u.v * 7) * dt; u.a += u.v * dt; e.rotation.x = u.a; e.rotation.z = u.sx * (0.25 + spN * 0.2); }
   // хвост: чем длиннее комбо, тем быстрее
   const hot = time - lastPick < 1.6 ? combo : 0, wag = 9 + Math.min(22, hot * 2.2) + (state !== 'play' ? 6 : 0);
   J.tail.rotation.z = Math.sin(time * wag) * (0.45 + Math.min(.4, hot * .04)); J.tail2.rotation.z = Math.sin(time * wag - .8) * 0.4;
