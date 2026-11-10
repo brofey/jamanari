@@ -852,8 +852,7 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointermove', e => {
   if (!joy.on || e.pointerId !== joy.id) return;
   let dx = e.clientX - joy.sx, dy = e.clientY - joy.sy; const l = Math.hypot(dx, dy), M = 56;
-  if (l > M){ // база тянется за пальцем
-    joy.sx += dx / l * (l - M); joy.sy += dy / l * (l - M); dx = dx / l * M; dy = dy / l * M; joyEl.style.left = joy.sx + 'px'; joyEl.style.top = joy.sy + 'px'; }
+  if (l > M){ dx = dx / l * M; dy = dy / l * M; } // база стоит на месте касания, ручка упирается в край
   const k = l < 7 ? 0 : 1; joy.x = dx / M * k; joy.y = -dy / M * k; knob.style.transform = 'translate(' + dx.toFixed(0) + 'px,' + dy.toFixed(0) + 'px)';
 });
 const joyEnd = e => { if (e.pointerId !== joy.id) return; joy.on = false; joy.x = joy.y = 0; joyEl.classList.remove('on'); };
