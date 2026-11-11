@@ -545,7 +545,6 @@ const J = {};
   const body = J.body = new T.Group(); jem.add(body);
   dpart(body, S, fur, 0, .33, -.02, .19, .18, .33);
   dpart(body, S, fur, 0, .40, .24, .15, .16, .16);
-  dpart(body, S, toon(0xead2ab), .04, .49, -.17, .06, .02, .07, false);
   // ошейник с жетоном
   const collar = new T.Mesh(new T.TorusGeometry(.15, .024, 5, 14), blk); collar.position.set(0, .47, .3); collar.rotation.x = -PI / 4; body.add(collar);
   const tag = J.tag = new T.Group(); tag.position.set(0, .36, .42); body.add(tag);
