@@ -611,6 +611,26 @@ const core = (function(){
   g.setAttribute('color', new T.BufferAttribute(col, 3)); g.computeVertexNormals();
   const m = new T.Mesh(g, MAT); m.castShadow = true; m.receiveShadow = true; ballG.add(m); return m;
 })();
+// Утрамбовка: плотная россыпь кусочков поверх мячика в цветах съеденного. Появляется с ⌀1 м и к ⌀3 м закрывает мячик целиком,
+// чтобы ком не выглядел голым между крупными вещами. Один объект на отрисовку.
+// Прилипшие вещи: SINK0..SINK1 — от какой доли размера кома вещь целиком внутри до какой целиком снаружи; MAXA — сколько держим.
+const SINK0 = 0.045, SINK1 = 0.3, MAXA = 120, NFIL = TOUCH ? 220 : 320;
+const filler = (function(){
+  const m = new T.InstancedMesh(new T.IcosahedronGeometry(1, 0), new T.MeshToonMaterial({ gradientMap: grad }), NFIL);
+  m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; ballG.add(m); return m;
+})();
+const filD = []; { const ga = PI * (3 - Math.sqrt(5));   // равномерно по сфере (спираль Фибоначчи), каждому кусочку — свой поворот и пропорции
+  for (let i = 0; i < NFIL; i++){ const y = 1 - (i + .5) / NFIL * 2, r = Math.sqrt(1 - y * y), a = i * ga;
+    filD.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, s: .75 + Math.random() * .5, sx: .8 + Math.random() * .5, sy: .55 + Math.random() * .45, q: new T.Quaternion().setFromEuler(new T.Euler(Math.random() * 6, Math.random() * 6, Math.random() * 6)) }); } }
+const fillF = () => { const t = clamp((R - .5) / 1, 0, 1); return t * t * (3 - 2 * t); };
+function fillerReset(){ const c = new T.Color(); for (let i = 0; i < NFIL; i++){ c.set(i % 2 ? 0xe23b6d : 0xfff3dc); filler.setColorAt(i, c); } filler.instanceColor.needsUpdate = true; }
+function fillerTint(col, n){ const c = new T.Color(); for (let k = 0; k < n; k++){ c.set(col).multiplyScalar(.85 + Math.random() * .25); filler.setColorAt((Math.random() * NFIL) | 0, c); } filler.instanceColor.needsUpdate = true; }
+const _fm = new T.Matrix4(), _fp = new T.Vector3(), _fs = new T.Vector3();
+function updFiller(rc, f){
+  filler.visible = f > 0.01; if (!filler.visible) return; const s0 = rc * .2 * f;
+  for (let i = 0; i < NFIL; i++){ const d = filD[i]; _fp.set(d.x, d.y, d.z).multiplyScalar(rc * .97); _fs.set(s0 * d.s * d.sx, s0 * d.s * d.sy, s0 * d.s); _fm.compose(_fp, d.q, _fs); filler.setMatrixAt(i, _fm); }
+  filler.instanceMatrix.needsUpdate = true;
+}
 
 // след на траве
 // следы лап: подушечка и четыре пальца, пальцы смотрят по ходу (+z)
@@ -733,6 +753,7 @@ let state = 'title', time = 0, R = R0, Rs = R0, bx = 0, bz = 0, vx = 0, vz = 0, 
 let count = 0, combo = 0, lastPick = -9, lastPop = -9, lastBonk = -9, lastWarn = -9, lastHonk = -9, hitstop = 0, shake = 0, ballPop = 0, flash = 0;
 let camD = 3.6, camP = 0.3, camYaw = 0.5, camY = 0.2, ctX = 0, ctZ = 0, fovK = 0, runPh = 0, spN = 0, blinkT = 2, tiltT = 0, tiltV = 0, tiltA = 0, barkT = 9, endT = 0, dustT = 0, jumpY = 0, jumpV = 0;
 let tierN = 0, unlockI = 0, toastQ = [], toastT = 0, stats = {};
+let boostT = 0, lastKnock = -9, toAll = false, setsDone = 0;   // разгон за комплект, когда машина последний раз выбила вещи, «класть в bkAll», сколько комплектов съедено
 const TIERS = [0.45, 1.0, 2.2, 5.0, 14, 40];
 const UNL = TYPES.slice().sort((a, b) => a.s - b.s);
 const items = [], attached = [];
@@ -742,7 +763,7 @@ const geoCache = {};
 function getGeo(t, v){
   const key = t.k + '_' + v; let g = geoCache[key];
   if (!g){ const m = merge(t.b(v)); m.computeBoundingBox(); const bb = m.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, cz = (bb.min.z + bb.max.z) / 2;
-    m.translate(-cx, -cy, -cz); m.computeBoundingSphere(); g = geoCache[key] = { g: m, hh: (bb.max.y - bb.min.y) / 2 }; }
+    m.translate(-cx, -cy, -cz); m.computeBoundingSphere(); g = geoCache[key] = { g: m, hh: (bb.max.y - bb.min.y) / 2, col: new T.Color(m.attributes.color.getX(0), m.attributes.color.getY(0), m.attributes.color.getZ(0)).getHex() }; }   // col — цвет основной части, для утрамбовки
   return g;
 }
 // ————————————————————————————— мир: остров → районы → кварталы → участки → сценки
@@ -810,7 +831,7 @@ function put(k, x, z, ry, o){
     // постройки и заборы записываем честным прямоугольником, иначе в углы домов залезает мелочь
     e = t.x ? occAdd(x, z, Math.hypot(t.d[0], t.d[2]) * sc / 2, { c: Math.cos(ry), s: Math.sin(ry), hx: t.d[0] * sc / 2, hz: t.d[2] * sc / 2 })
             : occAdd(x, z, t.q ? Math.max(.35, t.q) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8); }
-  const it = addItem(t, o.v !== undefined ? o.v : t.v ? (rnd() * t.v) | 0 : 0, x, z, sc, ry, null, rnd); if (e) e.it = it;
+  const it = addItem(t, o.v !== undefined ? o.v : t.v ? (rnd() * t.v) | 0 : 0, x, z, sc, ry, null, rnd); if (e) e.it = it; if (curSet) curSet.items.push(it);
   return it;
 }
 
@@ -860,6 +881,13 @@ const SC = {
     SC.bench(F, u, v + 6, PI); S(F, ['pail', 'scoop', 'toycar', 'tball', 'football', 'duck'], 9, u - 5, v - 4, u + 5, v + 5); P(F, 'stroller', u - 2.2, v + 6.2); }
 };
 
+// комплекты: всё, что поставила одна сценка, — один набор. Съел целиком — награда. Вложенные сценки входят в набор внешней.
+const SETN = { bbq: 'Барбекю', dog: 'Будка', laundry: 'Стирка', beds: 'Грядка', pool: 'Бассейн', play: 'Детский уголок', junk: 'Хлам', flowers: 'Клумба', tree: 'Под деревом',
+  wood: 'Дровник', picnic: 'Пикник', cafe: 'Столик кафе', camp: 'Лагерь', spot: 'Пляжное место', dump: 'Помойка', playground: 'Детская площадка' };
+let curSet = null;
+for (const k in SETN){ const f = SC[k]; SC[k] = function(){ if (curSet) return f.apply(null, arguments);
+  const s = curSet = { n: SETN[k], items: [], left: 0, done: false, lost: false }; try { f.apply(null, arguments); } finally { curSet = null; }
+  if (s.items.length >= 3){ s.left = s.items.length; for (const it of s.items) it.set = s; } }; }
 // ——— частный сектор: квартал на четыре участка, каждый лицом к своей улице
 function cellSub(c){
   const I = c.in, mx = (I.x0 + I.x1) / 2, mz = (I.z0 + I.z1) / 2, two = I.z1 - I.z0 >= 38, cols = I.x1 - I.x0 >= 38 ? 2 : 1;
@@ -1250,9 +1278,9 @@ function addItem(t, v, x, z, sc, ry, drv, rr){
   if (t.s * sc > (t.top || 0)) t.top = t.s * sc;
   const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = t.q ? t.q * sc : 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
   mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true; mesh.visible = false; mesh.matrixAutoUpdate = false;
-  const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, ex: t.x ? t.d[0] * sc * .46 : 0, ez: t.d[2] * sc * .46, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rr() * 3, mv: false, hp: rr() * 6, ph: rr() * 6, pop: 0, spd: 0, scared: false, grow: 1, fd: 0, fl: 0 };
+  const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, ex: t.x ? t.d[0] * sc * .46 : 0, ez: t.d[2] * sc * .46, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rr() * 3, mv: false, hp: rr() * 6, ph: rr() * 6, pop: 0, spd: 0, scared: false, grow: 1, fd: 0, fl: 0, v };
   mesh.position.set(x, it.y, z); mesh.updateMatrix(); items.push(it); alive++;
-  if (drv || cr > 16){ bkAll.push(it); world.add(mesh); }
+  if (drv || cr > 16 || toAll){ bkAll.push(it); world.add(mesh); }
   else { const k = Math.floor(x / BK) * 4096 + Math.floor(z / BK); let b = bkMap.get(k); if (!b){ b = { g: new T.Group(), list: [], on: false, st: 0 }; b.g.matrixAutoUpdate = false; bkMap.set(k, b); bkI0 = NaN; } b.list.push(it); b.g.add(mesh); }
   return it;
 }
@@ -1264,7 +1292,7 @@ const FILL_TARGET = 9, FILL_MAX = 1200, FILL_CAP = ISLAND * 0.4;
 let fillT = 0, fillN = 0;
 function refill(){
   const cut = camD * 0.003;
-  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && it.s < cut){ it.got = true; alive--; if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
+  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && !it.holder && it.s < cut){ it.got = true; alive--; if (it.set){ it.set.left--; it.set.lost = true; } if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
   if (R >= FILL_CAP || fillN >= FILL_MAX) return;
   const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4, big = R >= 25;
   let near = 0;
@@ -1300,8 +1328,8 @@ function refill(){
 }
 
 function resetGame(){
-  genWorld(QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0);
-  R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
+  genWorld(QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0); fillerReset();
+  R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; boostT = 0; lastKnock = -9; setsDone = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R) unlockI++;
@@ -1340,34 +1368,85 @@ showBest();
 // ————————————————————————————— подбор и столкновения
 const _t = new T.Vector3(), _ax = new T.Vector3(), _q = new T.Quaternion();
 function pickup(it){
+  if (it.held){ const h = it.held; it.held = null; h.holder = null; h.np = 0; pickup(h); }   // кот с добычей — забираем и добычу
   it.got = true; count++; alive--; it.mesh.material = MAT; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
-  R = Math.pow(Math.pow(R, GP) + GROW * Math.pow(it.s * feed(it.s), GP), 1 / GP);
+  const r0 = Math.pow(R, GP); R = Math.pow(r0 + GROW * Math.pow(it.s * feed(it.s), GP), 1 / GP); it.gain = Math.pow(R, GP) - r0;   // gain — чтобы честно отнять, если вещь выбьют
   const dx = it.x - bx, dz = it.z - bz, dy = it.y - R, l = Math.hypot(dx, dy, dz) || 1, rr = R * 0.8;
   _t.set(bx + dx / l * rr, R + dy / l * rr, bz + dz / l * rr);
   ballG.position.set(bx, R, bz); ballG.updateMatrixWorld(true);
   it.mesh.visible = true; it.mesh.rotation.x = it.mesh.rotation.z = 0; it.mesh.updateMatrix();
   ballG.attach(it.mesh); ballG.worldToLocal(_t); it.mesh.position.copy(_t);
-  it.pop = 1; it.bs = it.mesh.scale.x; attached.push(it);
+  it.pop = 1; it.bs = it.mesh.scale.x; it.dir = it.mesh.position.clone().normalize(); attached.push(it);   // dir — направление от центра: вещь едет вместе с поверхностью
   combo = time - lastPick < 1.5 ? combo + 1 : 1; lastPick = time;
   const st = stats[it.t.n] || (stats[it.t.n] = { e: it.t.e, n: 0 }); st.n++;
   const big = it.s > R * 0.42;
   Snd.pop(combo, big); if (it.t.al) Snd.voice(it.t.al.snd);
-  if (time - lastPop > 0.13 || big){ lastPop = time; popup(it.t.e + ' ' + it.t.n, it.x, it.y + it.s, it.z, false); }
+  let tag = '';
+  if (it.set){ const s = it.set; s.left--;
+    if (s.left <= 0 && !s.done && !s.lost){ s.done = true; setsDone++; boostT = 4; popup(s.n + ' — целиком!', bx, R * 2.4, bz, true); confetti(30, Math.pow(R / R0, .8)); Snd.fan(); }
+    else if (!s.done && !s.lost) tag = ' · ' + s.n + ' ' + (s.items.length - s.left) + '/' + s.items.length; }
+  if (time - lastPop > 0.13 || big || tag){ lastPop = time; popup(it.t.e + ' ' + it.t.n + tag, it.x, it.y + it.s, it.z, false); }
   for (let i = 0; i < (big ? 9 : 4); i++){ const a = Math.random() * TAU, v = R * (1.5 + Math.random() * 2);
     spawnP(it.x, it.y, it.z, Math.cos(a) * v, R * (2 + Math.random() * 3), Math.sin(a) * v, .45 + Math.random() * .3, R * (.05 + Math.random() * .05), i % 2 ? 0xffe27a : 0xfffaf0, R * 14); }
   ballPop = Math.min(0.3, ballPop + (big ? 0.2 : 0.08));
   if (big){ hitstop = 0.05; shake = Math.min(1, shake + 0.45); }
   if (combo === 10 || combo === 20 || combo === 35){ popup(combo === 10 ? 'Джем в ударе!' : combo === 20 ? 'Вот это аппетит!' : 'Джемзилла!', bx, R * 2.6, bz, true); confetti(26, Math.pow(R / R0, .8)); Snd.fan(); }
-  // прибираем то, что утонуло в коме
-  const cr = R * 0.72 * 0.9;
-  for (let i = attached.length - 1; i >= 0; i--){ const a = attached[i]; if (a === it) continue;
-    if (attached.length > 100 && i === 0 || a.mesh.position.length() + a.s * 0.9 < cr){ ballG.remove(a.mesh); attached.splice(i, 1); } }
+  // прибираем: тонет мелкое относительно кома, а не старое; сверх лимита уходят самые мелкие
+  for (let i = attached.length - 1; i >= 0; i--){ const a = attached[i]; if (a !== it && a.s < R * SINK0){ ballG.remove(a.mesh); attached.splice(i, 1); } }
+  while (attached.length > MAXA){ let k = -1, ms = 1e9; for (let i = 0; i < attached.length; i++){ const a = attached[i]; if (a !== it && a.s < ms){ ms = a.s; k = i; } }
+    if (k < 0) break; ballG.remove(attached[k].mesh); attached.splice(k, 1); }
+  fillerTint(getGeo(it.t, it.v || 0).col, 1 + Math.min(7, (it.s / R * 12) | 0));
   // новые размеры — новая добыча
   let any = false; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R){ if (UNL[unlockI].top > 0.3) { toastQ.push(UNL[unlockI]); any = true; } unlockI++; }
   let tn = 0; for (const th of TIERS) if (R >= th) tn++;
   if (tn > tierN){ tierN = tn; Snd.setTier(tn); Snd.fan(); if (!RM) flash = 1; confetti(40, Math.pow(R / R0, .8)); popup('Джем подрос!', bx, R * 2.8, bz, true); }
 }
+// вещь из кома снова в мире: рост откатываем, в счёт больше не входит. Возвращает новый предмет на земле.
+function eject(a, x, z){
+  const i = attached.indexOf(a); if (i >= 0) attached.splice(i, 1); ballG.remove(a.mesh);
+  R = Math.pow(Math.max(Math.pow(R0, GP), Math.pow(R, GP) - (a.gain || 0)), 1 / GP); count--;
+  const st = stats[a.t.n]; if (st && st.n > 0) st.n--; if (a.set && !a.set.done) a.set.left++;
+  if (coast(x, z) < 2){ x *= .97; z *= .97; }
+  toAll = true; const it = addItem(a.t, a.v || 0, x, z, a.sc, Math.random() * TAU, null, Math.random); toAll = false;
+  it.grow = 0; it.mesh.scale.setScalar(0.001); it.np = time + 1; it.set = a.set;
+  return it;
+}
+// самые свежие (наружные) вещи кома, которые можно отнять: не крупнее max
+function outer(n, max){ const r = []; for (let i = attached.length - 1; i >= 0 && r.length < n; i--){ const a = attached[i]; if (a.s <= max && a.s > .04) r.push(a); } return r; }
+// кот-воришка: подкрадывается к кому, утаскивает вещь и убегает. Догонишь или гавкнешь — бросит.
+function thiefStep(it, ok, dist, dx, dz, dt){
+  if (!ok){ it.ts = 0; return false; }
+  const sp = it.t.al.sp * it.sc;
+  if (it.ts === 2){ it.th = Math.atan2(dx, dz) + Math.sin(time * 4 + it.ph) * .4; it.mv = true; it.spd = sp * 1.05; it.tt -= dt;
+    if (it.tt <= 0 || dist > 35){ dropHeld(it, false); it.ts = 0; it.cd = time + 20; } return true; }
+  if (it.ts === 1){ it.th = Math.atan2(-dx, -dz); it.mv = true; it.spd = sp * 1.15;
+    if (dist > 25){ it.ts = 0; return false; }
+    if (dist < R + it.cr + .35){ const a = outer(1, it.s)[0];
+      if (a){ const h = eject(a, it.x, it.z); h.holder = it; h.np = Infinity; it.held = h; it.ts = 2; it.tt = 10; Snd.voice('meow'); popup('Кот стащил: ' + a.t.e + ' ' + a.t.n, it.x, it.y * 2 + .4, it.z, true); }
+      else { it.ts = 0; it.cd = time + 20; } }
+    return true; }
+  if (time > (it.cd || 4) && dist < 14 && dist > R + 2 && Math.random() < dt * .08 && outer(1, it.s).length){ it.ts = 1; return true; }
+  return false;
+}
+function dropHeld(cat, caught){ const h = cat.held; if (!h) return; cat.held = null; h.holder = null; h.np = time + (caught ? .7 : 0);
+  if (caught){ cat.ts = 0; cat.cd = time + 25; popup('Отдай! ' + h.t.e, cat.x, cat.y * 2 + .4, cat.z, true); Snd.voice('meow'); } }
+// гав пугает людей: они роняют то, что несли
+const DROP = { postman: ['paper', 'paper', 'box'], courier: ['box', 'box', 'bag'], granny: ['bag', 'handbag', 'apple', 'basket', 'keys'], neighbor: ['keys', 'cup', 'slipper', 'paper'],
+  clerk: ['papercup', 'keys', 'paper', 'handbag'], tourist: ['backpack', 'bottle', 'sandwich', 'pcone'], farmer: ['egg', 'carrot', 'milkcan', 'wheat'], beachman: ['beachball', 'slipper', 'icecream', 'towel'] };
+function scareDrop(p){
+  const L = DROP[p.t.k]; if (!L || p.dropT > time) return; p.dropT = time + 25; let n = 0;
+  for (let k = 0, m = 1 + (Math.random() < .5 ? 1 : 0); k < m; k++){ const a = Math.atan2(p.x - bx, p.z - bz) + (Math.random() - .5) * 2, d = .7 + Math.random() * .7, x = p.x + Math.sin(a) * d, z = p.z + Math.cos(a) * d;
+    if (blockAt(x, z, .2) || coast(x, z) < 2) continue; const t = TY[L[(Math.random() * L.length) | 0]];
+    const it = addItem(t, t.v ? (Math.random() * t.v) | 0 : 0, x, z, 1, Math.random() * TAU, null, Math.random); it.grow = 0; it.mesh.scale.setScalar(0.001); n++;
+    for (let i = 0; i < 4; i++){ const q = Math.random() * TAU; spawnP(x, it.y, z, Math.cos(q) * 1.5, 2 + Math.random() * 2, Math.sin(q) * 1.5, .5, .05, 0xfff6e6, 9); } }
+  if (n){ Snd.voice('oy'); popup('Ой! Уронил', p.x, p.y * 2 + .3, p.z, false); }
+}
 function bonk(it){
+  // машина крупнее кома выбивает из него несколько наружных вещей
+  if (it.drv && attached.length && time - lastKnock > 1.2){ lastKnock = time;
+    const out = outer(2 + ((Math.random() * 3) | 0), R * .8), ax = bx - it.x, az = bz - it.z, al = Math.hypot(ax, az) || 1;
+    for (const a of out){ const q = Math.atan2(ax / al, az / al) + (Math.random() - .5) * 2.2, d = R + a.cr + .5 + Math.random() * R; eject(a, bx + Math.sin(q) * d, bz + Math.cos(q) * d); }
+    if (out.length) popup('Бам! Минус ' + out.length, bx, R * 2.2, bz, true); }
   if (time - lastBonk < 0.25) return; lastBonk = time;
   Snd.bonk(); shake = Math.min(1, shake + 0.6); hitstop = 0.06; it.wob = 0.22;
   if (it.drv && time - lastHonk > 1){ lastHonk = time; Snd.voice('honk'); }
@@ -1381,9 +1460,10 @@ function updItems(dt){
   for (let i = 0; i < L.length; i++){
     const it = L[i]; if (it.got) continue;
     const m = it.mesh, d = it.drv;
+    if (it.holder){ const h = it.holder, a = h.mesh.rotation.y, f = h.t.d[2] * h.sc * .5; it.x = h.x + Math.sin(a) * f; it.z = h.z + Math.cos(a) * f; }   // в зубах у кота
     let dx = it.x - bx, dz = it.z - bz, dist = Math.sqrt(dx * dx + dz * dz);
-    if (!d && !DBGC && dist - it.cr > cullR){ if (m.visible) m.visible = false; continue; }   // далёкое и неподвижное — сразу мимо
-    const can = R >= it.s * PICK; let hop = 0;
+    if (!d && !it.holder && !DBGC && dist - it.cr > cullR){ if (m.visible) m.visible = false; continue; }   // далёкое и неподвижное — сразу мимо
+    const can = R >= it.s * PICK; let hop = it.holder ? it.holder.y * 1.1 : 0;
     if (d){
       // машина ездит по своей улице туда-обратно, держась правой полосы
       const blocked = !can && dist < R + it.cr + 3;
@@ -1396,7 +1476,8 @@ function updItems(dt){
     } else if (it.t.al && dist < cullR){
       const al = it.t.al, flee = play && can && !al.calm && dist < R * 2.5 + 2.5 * it.sc + 1;
       it.tm -= dt;
-      if (flee){ it.th = Math.atan2(dx, dz) + Math.sin(time * 3 + it.ph) * 0.5; it.mv = true; it.spd = al.sp * it.sc; it.scared = true; }
+      if (it.t.k === 'cat' && thiefStep(it, play && !can, dist, dx, dz, dt)){ if (it.scared) it.scared = false; }
+      else if (flee){ it.th = Math.atan2(dx, dz) + Math.sin(time * 3 + it.ph) * 0.5; it.mv = true; it.spd = al.sp * it.sc; it.scared = true; }
       else { if (it.scared){ it.scared = false; it.tm = 0; }
         if (it.tm <= 0){ it.tm = 1 + Math.random() * 3; it.mv = Math.random() < 0.6; const hx = it.hx - it.x, hz = it.hz - it.z;
           it.th = hx * hx + hz * hz > 64 ? Math.atan2(hx, hz) : Math.random() * TAU; it.spd = al.sp * it.sc * 0.35; } }
@@ -1412,7 +1493,7 @@ function updItems(dt){
       m.rotation.y = lerpAngle(m.rotation.y, it.th, Math.min(1, dt * 10));
       dx = it.x - bx; dz = it.z - bz; dist = Math.hypot(dx, dz);
     }
-    if (play && dist < R + (it.ex ? Math.max(it.ex, it.ez) * 1.5 : it.cr) + 0.1 && (can || !it.t.flat)){
+    if (play && dist < R + (it.ex ? Math.max(it.ex, it.ez) * 1.5 : it.cr) + 0.1 && (can || !it.t.flat) && !(it.np > time)){
       // расстояние до контура: у вытянутых вещей — до прямоугольника, у остальных — до круга
       let gap, ux, uz;
       if (it.ex){ const c = Math.cos(it.ry), s = Math.sin(it.ry), lx = -(dx * c - dz * s), lz = -(dx * s + dz * c);
@@ -1424,13 +1505,14 @@ function updItems(dt){
       const pen = R * 0.9 - gap;
       if (pen > 0){
         if (can){ pickup(it); continue; }
+        if (it.held) dropHeld(it, true);
         bx -= ux * pen; bz -= uz * pen;
         const vn = vx * ux + vz * uz; if (vn > 0){ vx -= ux * vn * 1.5; vz -= uz * vn * 1.5; if (vn > vmax() * 0.3) bonk(it); }
         dx = it.x - bx; dz = it.z - bz; dist = Math.hypot(dx, dz);
       }
     }
     const vis = DBGC ? it.s > camD * 0.002 : dist - it.cr < cullR && it.s > minS && it.s > dist * 0.006; m.visible = vis;
-    const gr = it.grow < 1, dyn = d || it.t.al || it.wob > 0 || gr;   // неподвижному матрицу не пересчитываем
+    const gr = it.grow < 1, dyn = d || it.t.al || it.holder || it.wob > 0 || gr;   // неподвижному матрицу не пересчитываем
     if (it.grow < 1){ it.grow = Math.min(1, it.grow + dt * 2.2); const g = it.grow, e = 1 + 2.2 * Math.pow(g - 1, 3) + 1.2 * Math.pow(g - 1, 2); m.scale.setScalar(Math.max(0.001, it.sc * e)); }
     if (vis) m.castShadow = it.s > shS;
     const oc = vis && !DBGC && it.y * 2 > R * .6 && dist - Math.max(it.cr, it.ex, it.ez) * 1.3 < camD && (occludes(it, bx, bz, R) || occludes(it, dogX, dogZ, jem.scale.x * .4)) ? 1 : 0;
@@ -1443,13 +1525,15 @@ function updItems(dt){
   for (let i = 0; i < attached.length; i++){ const a = attached[i]; let s = 1;
     if (a.pop > 0){ a.pop = Math.max(0, a.pop - dt * 3.2); s += Math.sin(a.pop * PI) * 0.45 * a.pop; }
     if (a.t.al && !a.t.al.calm) s *= 1 + Math.sin(time * 15 + a.ph) * 0.07;
-    a.mesh.scale.setScalar(a.bs * s); a.mesh.castShadow = a.s > R * 0.12; }
+    a.mesh.scale.setScalar(a.bs * s); a.mesh.castShadow = a.s > R * 0.12;
+    // насколько торчит: крупное относительно кома — целиком снаружи, мелкое плавно уходит внутрь
+    if (a.dir){ const o = smooth(clamp((a.s / R - SINK0) / (SINK1 - SINK0), 0, 1)); a.mesh.position.copy(a.dir).multiplyScalar(R * .8 + a.s * (o * .9 - .55)); } }
 }
 // Прогрессия. Скорость растёт медленнее размера (VEXP < 1), иначе большой ком пролетает остров за секунды.
 // feed — сколько роста даёт предмет: то, что намного меньше кома, кормит слабо. Включается плавно после ⌀2 м, начало игры не трогает.
 // Числа подобраны ботом: от ⌀3 м (заборы) до ⌀80–120 м у бота 12–16 минут, у живого игрока примерно 5–8.
 let VEXP = 0.6, DIMK = 0.7, DIMP = 1.2;
-const vmax = () => 3.4 * Math.pow(Math.min(R, 1.5) / R0, 0.8) * Math.pow(Math.max(R, 1.5) / 1.5, VEXP);   // до ⌀3 м — как было
+const vmax = () => 3.4 * Math.pow(Math.min(R, 1.5) / R0, 0.8) * Math.pow(Math.max(R, 1.5) / 1.5, VEXP) * (1 + .4 * Math.min(1, boostT));   // boostT — разгон за комплект   // до ⌀3 м — как было
 const feed = s => { const k = DIMK * clamp(R - 1, 0, 1); return k > 0 ? Math.min(1, Math.pow(s / (k * R), DIMP)) : 1; };
 
 // ————————————————————————————— управление
@@ -1489,7 +1573,8 @@ function bark(){
   popup('Гав!', jem.position.x, 0.95 * sc, jem.position.z, true);
   const w = waves[0].userData.t < waves[1].userData.t ? waves[1] : waves[0]; w.userData.t = 0; w.userData.r = R * 2 + 1.5 * sc; w.position.set(jem.position.x, 0.08, jem.position.z); w.visible = true;
   const rng = R * 3 + 2.5 * sc;
-  for (const it of items){ if (it.got) continue; const d = Math.hypot(it.x - bx, it.z - bz); if (d < rng + it.cr){ it.wob = Math.max(it.wob, 0.3); if (it.t.al){ it.tm = 0.8; it.mv = true; it.th = Math.atan2(it.x - bx, it.z - bz); it.spd = it.t.al.sp * it.sc; } } }
+  for (const it of items){ if (it.got) continue; const d = Math.hypot(it.x - bx, it.z - bz); if (d < rng + it.cr){ it.wob = Math.max(it.wob, 0.3); if (it.t.al){ it.tm = 0.8; it.mv = true; it.th = Math.atan2(it.x - bx, it.z - bz); it.spd = it.t.al.sp * it.sc;
+    if (it.held) dropHeld(it, true); else if (it.ts === 1){ it.ts = 0; it.cd = time + 15; } scareDrop(it); } } }
 }
 function mute(){ const m = Snd.toggleMute(); $('bMute').classList.toggle('off', m); $('bMute').setAttribute('aria-label', m ? 'Включить звук' : 'Выключить звук'); }
 function startGame(){
@@ -1506,7 +1591,7 @@ function endGame(){
   state = 'end'; endT = 0; joy.on = false; joyEl.classList.remove('on'); Snd.stopMusic(); Snd.end(); confetti(60, Math.pow(R / R0, .8)); jumpV = 3.2;
   const d = R * 2, all = alive <= 0, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : d < 60 ? 'Джемзилла' : d < 200 ? 'Гроза острова' : 'Пёс размером с остров';
   $('endSize').textContent = '⌀ ' + fmt(R); $('rank').textContent = 'Звание: ' + rank;
-  $('endCount').textContent = 'В коме ' + count + ' ' + plural(count, 'вещь', 'вещи', 'вещей') + '.';
+  $('endCount').textContent = 'В коме ' + count + ' ' + plural(count, 'вещь', 'вещи', 'вещей') + '.' + (setsDone ? ' Комплектов целиком: ' + setsDone + '.' : '');
   const ul = $('haul'); ul.textContent = '';
   Object.keys(stats).sort((a, b) => stats[b].n - stats[a].n).slice(0, 8).forEach(n => { const li = document.createElement('li'); li.textContent = stats[n].e + ' ' + n + ' ×' + stats[n].n; ul.appendChild(li); });
   const nx = UNL[unlockI]; $('end').querySelector('h2').textContent = all ? 'На острове больше ничего нет' : 'Прогулка окончена';
@@ -1551,7 +1636,7 @@ function update(dt, raw){
   if (md > 1e-6){ _ax.set(mz / md, 0, -mx / md); _q.setFromAxisAngle(_ax, md / R); ballG.quaternion.premultiply(_q); }
   ballPop *= Math.exp(-9 * dt);
   const nAtt = attached.length, cf = lerp(1, 0.72, Math.min(1, nAtt / 14));
-  core.scale.setScalar(R * cf); ballG.position.set(bx, R, bz); ballG.scale.setScalar(1 + ballPop * Math.sin(time * 40) * .5 + ballPop * .5);
+  const ff = fillF(); core.scale.setScalar(R * cf * (1 - .06 * ff)); updFiller(R * cf, ff); ballG.position.set(bx, R, bz); ballG.scale.setScalar(1 + ballPop * Math.sin(time * 40) * .5 + ballPop * .5);
   // Джем
   const sp = Math.hypot(vx, vz); spN += (clamp(sp / vm, 0, 1) - spN) * Math.min(1, dt * 8);
   const ds = 0.78 * Math.pow(R / R0, 0.55);
@@ -1588,7 +1673,7 @@ function update(dt, raw){
   if (spN > 0.15) tiltV = 0; tiltA += (tiltV - tiltA) * Math.min(1, dt * 7);
   J.head.rotation.z = tiltA; J.head.rotation.x = -spN * 0.1 + Math.sin(runPh * 2) * 0.05 * spN - (barkT < 0.3 ? 0.45 * Math.sin(barkT / 0.3 * PI) : 0);
   J.head.rotation.y = state === 'title' ? Math.sin(time * .7) * 0.25 : 0;
-  barkT += dt;
+  barkT += dt; boostT = Math.max(0, boostT - dt);
   // пыль из-под лап
   dustT -= dt; if (spN > 0.4 && dustT <= 0){ dustT = 0.05; spawnP(dogX + (Math.random() - .5) * .2 * ds, 0.04 * ds, dogZ + (Math.random() - .5) * .2 * ds, -vx * .12 + (Math.random() - .5) * ds, (.5 + Math.random()) * ds, -vz * .12 + (Math.random() - .5) * ds, .5 + Math.random() * .3, (.035 + Math.random() * .035) * ds, 0xf3ead2, -0.5 * ds); }
   // след
