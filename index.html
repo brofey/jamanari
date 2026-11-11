@@ -77,14 +77,23 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 /* ——— экраны ——— */
 .screen{position:fixed;inset:0;display:flex;
   padding:calc(env(safe-area-inset-top,0px) + 20px) calc(env(safe-area-inset-right,0px) + 22px) calc(env(safe-area-inset-bottom,0px) + 26px) calc(env(safe-area-inset-left,0px) + 22px)}
-#title{flex-direction:column;justify-content:flex-end;align-items:flex-start;
+#title{flex-direction:column;justify-content:flex-start;align-items:flex-start;overflow-y:auto;touch-action:pan-y;scrollbar-width:none;
   background:linear-gradient(to top,rgba(61,22,56,.62) 0%,rgba(61,22,56,.22) 38%,rgba(61,22,56,0) 62%)}
+#title::-webkit-scrollbar{display:none}
+#title > :first-child{margin-top:auto}   /* прижимаем к низу, но на низком экране можно прокрутить к заголовку */
 #title h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,12.5vw,118px);line-height:.92;margin:0 0 14px;color:#fff6e6;letter-spacing:-.01em;
   text-shadow:0 3px 0 #3d1638,0 6px 0 #3d1638,0 9px 0 var(--jam),3px 3px 0 #3d1638,-3px 3px 0 #3d1638,3px -3px 0 #3d1638,-3px -3px 0 #3d1638}
 #title p{margin:0;color:#fff6e6;font-size:clamp(15px,4vw,19px);line-height:1.45;max-width:34em;text-shadow:0 2px 0 rgba(61,22,56,.8)}
 #title .how{opacity:.92;margin-top:14px;font-size:clamp(13px,3.5vw,16px)}
+#title .tips{list-style:none;margin:12px 0 0;padding:0;max-width:34em;display:grid;gap:5px}
+#title .tips li{color:#fff6e6;font-size:clamp(13px,3.5vw,16px);line-height:1.35;text-shadow:0 2px 0 rgba(61,22,56,.8);padding-left:1.7em;text-indent:-1.7em}
+#title .tips b{color:var(--lime);font-weight:700}
+@media (max-height:820px){ #title h1{font-size:clamp(34px,8.5vh,80px);margin-bottom:8px} #title .how,#title .tips{margin-top:8px} #title .tips li{font-size:13px} .go{margin-top:12px} }
 .go{margin-top:18px;font-family:var(--display);font-weight:400;font-size:clamp(20px,5.5vw,28px);background:var(--lime);color:#3d1638;
   border:4px solid #3d1638;border-radius:22px;box-shadow:0 6px 0 #3d1638;padding:12px 34px 14px}
+.go-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:18px}
+.go-row .go{margin-top:0}
+.go.alt{background:var(--cream);font-size:clamp(15px,4vw,19px);padding:10px 18px 11px}
 #best{margin-top:14px;font-weight:700}
 .center{align-items:center;justify-content:center;background:rgba(61,22,56,.45)}
 .card{background:var(--panel);color:var(--ink);border:4px solid var(--line);border-radius:28px;box-shadow:0 8px 0 var(--line);
@@ -126,7 +135,12 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
   <h1>Джем<br>катит<br>всё</h1>
   <p>Один пёс и всё, что плохо лежит. Начни с носков — закончи домами.</p>
   <p class="how">С телефона — веди пальцем по экрану.<br>С компьютера — WASD или стрелки, пробел — гав.</p>
-  <button id="bStart" class="go">Гулять</button>
+  <ul class="tips">
+    <li>🧺 <b>Комплекты.</b> Съешь сценку целиком — пикник, будку, грядку — и получишь разгон. Сколько осталось, видно в подписи к вещи.</li>
+    <li>📣 <b>Гав!</b> пугает прохожих: почтальон, курьер, бабушка роняют то, что несли.</li>
+    <li>🐈 <b>Коты и собаки</b> крадут вещи из кома и убегают. Догони вора или гавкни — бросит. Когда дорастёшь, их можно съесть.</li>
+  </ul>
+  <div class="go-row"><button id="bStart" class="go">Гулять</button><button id="bReroll" class="go alt">🎲 Сброс локации</button></div>
   <p id="best" hidden></p>
 </section>
 
@@ -220,6 +234,9 @@ const man = (shirt, hat, pack) => () => {
   if (hat) p.push(cyl(.18,.18,.08,8,hat,0,1.7,0), box(.2,.03,.14,hat,0,1.67,.2)); else p.push(sph(.175,K.dwood,0,1.6,-.03,1,.8,1,0));
   if (pack) p.push(box(.5,.5,.4,pack,0,1.1,-.33));
   return p; };
+// собаки: тот же облик в двух размерах (S — множитель), варианты окраса [шерсть, уши и морда]
+const pup = (S, cols) => v => { const c = cols[v][0], e = cols[v][1], q = x => x * S; return [sph(q(.2), c, 0, q(.36), 0, .9, .85, 1.9), sph(q(.14), c, 0, q(.55), q(.34)), box(q(.1), q(.08), q(.14), e, 0, q(.5), q(.48)), sph(q(.03), K.black, 0, q(.53), q(.56), 1, 1, 1, 0),
+  box(q(.05), q(.12), q(.08), e, q(.09), q(.63), q(.3), 0, 0, -.3), box(q(.05), q(.12), q(.08), e, -q(.09), q(.63), q(.3), 0, 0, .3), four((x, z) => cyl(q(.045), q(.04), q(.28), 5, c, x, q(.14), z), q(.1), q(.22))]; };
 const walker = { sp: 3, snd: 'oy', hop: .12 };
 const TYPES = [
 // ——— мелочь со двора
@@ -234,13 +251,13 @@ const TYPES = [
 {k:'flower',n:'Цветок',e:'🌼',d:[.14,.27,.14],c:26,r:[3,70],v:3,b:v=>{const c=[K.pink,K.yellow,K.white][v];return[cyl(.012,.012,.22,4,K.green,0,.11,0),cyl(.07,.07,.02,6,c,0,.23,0,.5,0,0),sph(.03,v===1?K.orange:K.yellow,0,.24,.012,1,1,1,0)];}},
 {k:'apple',n:'Яблоко',e:'🍎',d:[.16,.19,.16],c:10,r:[3,25],b:()=>[sph(.08,K.red,0,.08,0),cyl(.008,.008,.05,4,K.dwood,0,.175,0),box(.05,.01,.03,K.green,.03,.18,0)]},
 {k:'cup',n:'Кружка',e:'☕',d:[.17,.12,.12],c:6,r:[2,12],v:2,b:v=>{const c=[K.white,K.teal][v];return[cyl(.06,.05,.12,8,c,0,.06,0),box(.02,.07,.05,c,.075,.06,0)];}},
-{k:'pigeon',n:'Голубь',e:'🐦',d:[.18,.26,.36],c:10,r:[5,45],al:{sp:2.6,snd:'coo',hop:.25},b:()=>[sph(.09,K.grey,0,.11,0,1,.9,1.4),sph(.05,K.dgrey,0,.21,.09,1,1,1,0),cone(.015,.04,4,K.orange,0,.2,.15,H,0,0),box(.08,.02,.1,K.dgrey,0,.12,-.14)]},
+{k:'pigeon',n:'Голубь',e:'🐦',d:[.18,.26,.36],c:10,r:[5,45],al:{sp:2.6,snd:'coo',hop:.1},b:()=>[sph(.09,K.grey,0,.11,0,1,.9,1.4),sph(.05,K.dgrey,0,.21,.09,1,1,1,0),cone(.015,.04,4,K.orange,0,.2,.15,H,0,0),box(.08,.02,.1,K.dgrey,0,.12,-.14)]},
 // ——— покрупнее
 {k:'pot',n:'Горшок с цветком',e:'🪴',d:[.4,.58,.4],c:8,r:[5,26],b:()=>[cyl(.16,.12,.22,7,0xc8643c,0,.11,0),sph(.2,K.green,0,.38,0,1,.9,1),sph(.07,K.pink,.08,.5,.05,1,1,1,0),sph(.06,K.yellow,-.07,.48,-.04,1,1,1,0)]},
 {k:'bucket',n:'Ведро',e:'🪣',d:[.34,.35,.34],c:6,r:[5,26],b:()=>[cyl(.17,.12,.3,8,K.blue,0,.15,0),box(.34,.015,.015,K.dgrey,0,.335,0)]},
 {k:'pumpkin',n:'Тыква',e:'🎃',d:[.52,.5,.52],c:8,r:[7,34],b:()=>[sph(.26,K.orange,0,.22,0,1,.82,1),cyl(.03,.04,.08,5,K.dgreen,0,.46,0)]},
 {k:'gnome',n:'Садовый гном',e:'🧙',d:[.34,.76,.34],c:7,r:[7,34],b:()=>[cyl(.13,.17,.3,7,K.blue,0,.15,0),sph(.12,K.skin,0,.38,0),cone(.14,.32,7,K.red,0,.6,0),cone(.1,.18,5,K.white,0,.3,.08,PI,0,0)]},
-{k:'cat',n:'Кот',e:'🐈',d:[.3,.5,.75],c:7,r:[7,40],v:3,al:{sp:4.4,snd:'meow',hop:.12},b:v=>{const c=[K.orange,K.grey,K.black][v];return[sph(.15,c,0,.2,0,.9,.85,1.7),sph(.12,c,0,.34,.24),cone(.04,.08,4,c,.07,.46,.24),cone(.04,.08,4,c,-.07,.46,.24),cyl(.025,.025,.3,5,c,0,.38,-.28,-.5,0,0),four((x,z)=>cyl(.03,.03,.12,5,K.white,x,.06,z),.08,.14)];}},
+{k:'cat',n:'Кот',thief:1,e:'🐈',d:[.3,.5,.75],c:7,r:[7,40],v:3,al:{sp:4.4,snd:'meow',hop:.12},b:v=>{const c=[K.orange,K.grey,K.black][v];return[sph(.15,c,0,.2,0,.9,.85,1.7),sph(.12,c,0,.34,.24),cone(.04,.08,4,c,.07,.46,.24),cone(.04,.08,4,c,-.07,.46,.24),four((x,z)=>cyl(.03,.03,.12,5,K.white,x,.06,z),.08,.14)];}},
 {k:'hen',n:'Курица',e:'🐔',d:[.32,.5,.5],c:9,r:[8,45],al:{sp:2.3,snd:'cluck',hop:.1},b:()=>[sph(.16,K.white,0,.2,0,1,.9,1.25),sph(.08,K.white,0,.38,.14,1,1,1,0),box(.03,.06,.08,K.red,0,.47,.14),cone(.03,.07,4,K.orange,0,.37,.24,H,0,0),box(.06,.16,.08,K.white,0,.3,-.2,-.5,0,0),cyl(.015,.015,.1,4,K.orange,.05,.05,0),cyl(.015,.015,.1,4,K.orange,-.05,.05,0)]},
 {k:'boot',n:'Сапог',e:'🥾',d:[.18,.44,.34],c:6,r:[4,22],b:()=>[box(.16,.34,.18,0x3f7d4f,0,.24,-.03),box(.16,.13,.34,0x3f7d4f,0,.065,.05),box(.18,.04,.2,0x2c5c3a,0,.42,-.03)]},
 {k:'melon',n:'Арбуз',e:'🍉',d:[.6,.48,.52],c:7,r:[7,34],b:()=>[sph(.26,K.dgreen,0,.24,0,1.15,.92,1),sph(.06,0x9be07f,0,.47,0,1,.3,1,0)]},
@@ -328,7 +345,7 @@ const TYPES = [
 {k:'box',n:'Коробка',e:'📦',d:[.42,.33,.42],b:()=>[box(.42,.32,.42,0xc9a26a,0,.16,0),box(.43,.02,.08,0xe3c896,0,.321,0)]},
 {k:'crab',n:'Краб',e:'🦀',d:[.3,.1,.18],al:{sp:1.8,snd:'squeak',hop:.03},b:()=>[sph(.09,K.red,0,.05,0,1.2,.5,.9,0),box(.05,.03,.05,K.red,.13,.06,.07),box(.05,.03,.05,K.red,-.13,.06,.07)]},
 {k:'hedgehog',n:'Ёжик',e:'🦔',d:[.22,.15,.32],al:{sp:1.2,snd:'squeak',hop:.03},b:()=>[sph(.1,0x6b4a3a,0,.08,-.02,1,.8,1.3,0),cone(.05,.1,5,K.sand,0,.06,.15,H,0,0)]},
-{k:'seagull',n:'Чайка',e:'🕊️',d:[.2,.31,.42],al:{sp:3,snd:'coo',hop:.3},b:()=>[sph(.1,K.white,0,.13,0,1,.9,1.5),sph(.06,K.white,0,.25,.1,1,1,1,0),cone(.02,.06,4,K.yellow,0,.24,.18,H,0,0),box(.1,.02,.14,K.grey,0,.15,-.14)]},
+{k:'seagull',n:'Чайка',e:'🕊️',d:[.2,.31,.42],al:{sp:3,snd:'coo',hop:.1},b:()=>[sph(.1,K.white,0,.13,0,1,.9,1.5),sph(.06,K.white,0,.25,.1,1,1,1,0),cone(.02,.06,4,K.yellow,0,.24,.18,H,0,0),box(.1,.02,.14,K.grey,0,.15,-.14)]},
 {k:'hare',n:'Заяц',e:'🐇',d:[.26,.53,.5],al:{sp:5,snd:'squeak',hop:.3},b:()=>[sph(.14,K.cream,0,.16,0,.9,.9,1.4),sph(.09,K.cream,0,.3,.14,1,1,1,0),box(.03,.18,.05,K.cream,.04,.44,.12),box(.03,.18,.05,K.cream,-.04,.44,.12),sph(.05,K.white,0,.16,-.2,1,1,1,0)]},
 // ——— пляж, двор, лес: небольшое
 {k:'beachball',n:'Пляжный мяч',e:'🏐',d:[.5,.5,.5],b:()=>[sph(.25,K.white,0,.25,0),sph(.2,K.red,.07,.27,0,1,1,1,0),sph(.2,K.blue,-.07,.27,0,1,1,1,0)]},
@@ -411,15 +428,31 @@ const TYPES = [
 {k:'branch',n:'Ветка',e:'🪵',d:[.95,.2,.3],b:()=>[cyl(.04,.07,.9,6,K.dwood,0,.07,0,0,0,H),box(.3,.04,.04,K.dwood,.12,.08,.1,0,.7,0),sph(.1,K.green,-.35,.12,.06,1,.6,1,0)]},
 {k:'handbag',n:'Сумка',e:'👜',d:[.46,.44,.18],b:()=>[box(.46,.32,.18,K.red,0,.16,0),box(.3,.04,.04,K.dwood,0,.42,0),box(.04,.1,.04,K.dwood,.13,.36,0),box(.04,.1,.04,K.dwood,-.13,.36,0)]},
 {k:'crate',n:'Ящик',e:'📦',d:[.57,.42,.47],b:()=>[box(.55,.4,.45,K.wood,0,.2,0),box(.57,.05,.47,K.dwood,0,.38,0),box(.57,.05,.47,K.dwood,0,.05,0)]},
-{k:'sack',n:'Мешок',e:'💰',d:[.48,.62,.48],b:()=>[cyl(.2,.24,.5,8,0xd9c39a,0,.25,0),cyl(.06,.16,.12,7,0xd9c39a,0,.56,0),cyl(.07,.07,.04,7,K.dwood,0,.6,0)]}
+{k:'sack',n:'Мешок',e:'💰',d:[.48,.62,.48],b:()=>[cyl(.2,.24,.5,8,0xd9c39a,0,.25,0),cyl(.06,.16,.12,7,0xd9c39a,0,.56,0),cyl(.07,.07,.04,7,K.dwood,0,.6,0)]},
+// ——— собаки-воришки: крупнее кота, крадут дольше
+{k:'dog',n:'Пёс',thief:1,e:'🐕',d:[.36,.7,1.1],v:3,al:{sp:5,snd:'woof',hop:.14},b:pup(1,[[0xc08a55,K.dwood],[K.white,0x9a552c],[K.black,0x3a2622]])},
+{k:'crow',n:'Ворона',e:'🐦‍⬛',d:[.2,.3,.42],al:{sp:2.8,snd:'caw',hop:.1},b:()=>[sph(.11,K.black,0,.13,0,1,.9,1.5),sph(.065,K.black,0,.25,.11,1,1,1,0),cone(.025,.08,4,K.dgrey,0,.24,.19,H,0,0),box(.1,.02,.14,0x3a3f4a,0,.15,-.15)]},
+{k:'bigdog',n:'Большой пёс',thief:1,e:'🐕‍🦺',d:[.5,.98,1.54],v:2,al:{sp:5.6,snd:'woof',hop:.12},b:pup(1.4,[[0x8a5a36,0x3a2622],[K.grey,K.dgrey]])}
 ];
 const TY = {}; for (const t of TYPES) TY[t.k] = t;
 // x — прямоугольный контур столкновений (иначе круг), q — свой радиус круга (стволы, столбы), flat — лежит плашмя и не мешает катиться
 for (const k of 'bench table sofa car truck bus shed busstop garage house block tower stadium castle slide tent fence hedge rail laundry sandbox swing seesaw firewood dumpster rack sunbed boat log bike billboard coop trough shop office barn cabin beachhut kiosk fridge washer doghouse'.split(' ')) TY[k].x = 1;
-{ const Q = { pine: .3, tree: .4, oak: 1.1, lamp: .15, palm: .3, umbrella: .12, cafe: .5, pond: 7.5, tlight: .12, sign: .08, balloon: .1, scarecrow: .15, statue: 1.1, ferris: 9, wtower: 3, mill: 3, lifeguard: 1.3, crane: 2.2, sunflower: .08, corn: .1, well: .8 }; for (const k in Q) TY[k].q = Q[k]; }
+{ const Q = { pine: .3, tree: .4, oak: 1.1, lamp: .15, palm: .3, umbrella: .12, cafe: .5, pond: 7.5, tlight: .12, sign: .08, balloon: .1, scarecrow: .15, statue: 1.1, ferris: 9, wtower: 3, mill: 3, lifeguard: 1.3, crane: 2.2, sunflower: .08, corn: .1, well: .8, volcano: 45, mountain: 35, hill: 15 }; for (const k in Q) TY[k].q = Q[k]; }
 for (const t of TYPES){ const w = t.d[0], h = t.d[1], d = t.d[2]; t.s = 0.5 * (0.6 * Math.max(w, h, d) + 0.4 * Math.cbrt(w * h * d)); }
 // тонкое считается по толщине: забор съедобен раньше, чем ком перестаёт пролезать в калитку
-TY.fence.s = .45; TY.hedge.s = .65; TY.rail.s = .5;
+TY.fence.s = .45; TY.hedge.s = .65; TY.rail.s = .5; TY.plaid.s = .3; TY.towel.s = .28;
+// хвосты и крылья — отдельные кусочки, чтобы ими махать. y, z — где крепятся (в исходных координатах модели), rx — наклон хвоста назад
+TY.cat.tl = { y: .248, z: -.208, len: .3, r0: .025, r1: .025, rx: -.5, cols: [K.orange, K.grey, K.black] };
+TY.dog.tl = { y: .385, z: -.303, len: .3, r0: .035, r1: .025, rx: -.7, cols: [0xc08a55, K.white, K.black] };
+TY.bigdog.tl = { y: .54, z: -.42, len: .42, r0: .05, r1: .035, rx: -.7, cols: [0x8a5a36, K.grey] };
+TY.pigeon.wg = { y: .13, z: 0, len: .16, dep: .12, col: K.grey }; TY.seagull.wg = { y: .15, z: 0, len: .24, dep: .13, col: K.white }; TY.crow.wg = { y: .15, z: 0, len: .2, dep: .14, col: K.black };
+for (const k of ['pigeon', 'seagull', 'crow']) TY[k].bird = 1;
+// склоны: [радиус у земли, радиус наверху, высота, купол?] — ком упирается в склон на своей высоте, а не в круг
+// пятое число — сколько граней у модели: в середине грани склон ближе к центру, чем в углу
+TY.volcano.cone = [45, 12, 46, 0, 10]; TY.mountain.cone = [35, 0, 44, 0, 9]; TY.hill.cone = [15, 0, 7.5, 1];
+const coneR = (it, ax, az) => { const c = it.t.cone, y = Math.min(R * .6, c[2]), k = y / c[2]; let r = (c[3] ? c[0] * Math.sqrt(1 - k * k) : c[0] - (c[0] - c[1]) * k) * it.sc;
+  if (c[4]){ const sg = TAU / c[4], a = ((Math.atan2(ax, az) - it.ry) % sg + sg) % sg; r *= Math.cos(sg / 2) / Math.cos(a - sg / 2); }   // ax, az — направление от центра к кому
+  return r; };
 /*END*/
 
 // ————————————————————————————— рендер
@@ -597,6 +630,8 @@ const J = {};
   const tg2 = new T.CylinderGeometry(.01, .022, .13, 6); tg2.translate(0, .065, 0);
   dpart(t2, tg2, fur, 0, 0, 0, 1, 1, 1);
   t1.rotation.x = -.35; t2.rotation.x = .5;
+  // принимает тени, иначе в тени дома Джем светится как на солнце (обводка — не освещается, ей не нужно)
+  jem.traverse(o => { if (o.isMesh && o.material !== outlineMat) o.receiveShadow = true; });
 })();
 
 // ком
@@ -743,6 +778,8 @@ const Snd = (() => {
       else if (k === 'oink'){ tone(sfx, 'sawtooth', 190, t, 0.12, 0.1, 120, 0.1); tone(sfx, 'sawtooth', 210, t + 0.15, 0.14, 0.1, 110, 0.12); }
       else if (k === 'baa'){ tone(sfx, 'sawtooth', 380, t, 0.4, 0.08, 330, 0.35); tone(sfx, 'triangle', 395, t, 0.4, 0.1, 340, 0.35); }
       else if (k === 'squeak'){ tone(sfx, 'sine', 1500, t, 0.07, 0.1, 2100, 0.05); }
+      else if (k === 'caw'){ for (let i = 0; i < 2; i++){ const tt = t + i * .22; tone(sfx, 'sawtooth', 560, tt, .16, .09, 380, .14); noise(sfx, tt, .12, .1, 'bandpass', 1400, 2); } }
+      else if (k === 'woof'){ for (let i = 0; i < 2; i++){ const tt = t + i * .16; tone(sfx, 'sawtooth', 260, tt, .12, .12, 120, .1); noise(sfx, tt, .07, .12, 'bandpass', 700, 1.2); } }
       else if (k === 'beep'){ tone(sfx, 'square', 1500, t, 0.06, 0.06); tone(sfx, 'square', 1000, t + 0.08, 0.08, 0.06); }
       else if (k === 'honk'){ tone(sfx, 'square', 392, t, 0.16, 0.07); tone(sfx, 'square', 494, t, 0.16, 0.07); } }
   };
@@ -753,7 +790,7 @@ let state = 'title', time = 0, R = R0, Rs = R0, bx = 0, bz = 0, vx = 0, vz = 0, 
 let count = 0, combo = 0, lastPick = -9, lastPop = -9, lastBonk = -9, lastWarn = -9, lastHonk = -9, hitstop = 0, shake = 0, ballPop = 0, flash = 0;
 let camD = 3.6, camP = 0.3, camYaw = 0.5, camY = 0.2, ctX = 0, ctZ = 0, fovK = 0, runPh = 0, spN = 0, blinkT = 2, tiltT = 0, tiltV = 0, tiltA = 0, barkT = 9, endT = 0, dustT = 0, jumpY = 0, jumpV = 0;
 let tierN = 0, unlockI = 0, toastQ = [], toastT = 0, stats = {};
-let boostT = 0, lastKnock = -9, toAll = false, setsDone = 0;   // разгон за комплект, когда машина последний раз выбила вещи, «класть в bkAll», сколько комплектов съедено
+let boostT = 0, lastKnock = -9, toAll = false, setsDone = 0, thiefNow = null, thiefT = 0;   // thiefNow — кто сейчас охотится за комом: вор всегда один   // разгон за комплект, когда машина последний раз выбила вещи, «класть в bkAll», сколько комплектов съедено
 const TIERS = [0.45, 1.0, 2.2, 5.0, 14, 40];
 const UNL = TYPES.slice().sort((a, b) => a.s - b.s);
 const items = [], attached = [];
@@ -763,7 +800,7 @@ const geoCache = {};
 function getGeo(t, v){
   const key = t.k + '_' + v; let g = geoCache[key];
   if (!g){ const m = merge(t.b(v)); m.computeBoundingBox(); const bb = m.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, cz = (bb.min.z + bb.max.z) / 2;
-    m.translate(-cx, -cy, -cz); m.computeBoundingSphere(); g = geoCache[key] = { g: m, hh: (bb.max.y - bb.min.y) / 2, col: new T.Color(m.attributes.color.getX(0), m.attributes.color.getY(0), m.attributes.color.getZ(0)).getHex() }; }   // col — цвет основной части, для утрамбовки
+    m.translate(-cx, -cy, -cz); m.computeBoundingSphere(); g = geoCache[key] = { g: m, c: [cx, cy, cz], hh: (bb.max.y - bb.min.y) / 2, col: new T.Color(m.attributes.color.getX(0), m.attributes.color.getY(0), m.attributes.color.getZ(0)).getHex() }; }   // col — цвет основной части, для утрамбовки
   return g;
 }
 // ————————————————————————————— мир: остров → районы → кварталы → участки → сценки
@@ -858,7 +895,7 @@ const DC = (F, L, u, v, r, col) => dCirc(L, fx(F, u, v), fz(F, u, v), r, col);
 const SC = {
   bbq(F, u, v){ P(F, 'grill', u, v - 1.3, 0); P(F, 'table', u, v + .5, 0); P(F, 'chair', u - 1.3, v + .5, H); P(F, 'chair', u + 1.3, v + .5, -H); P(F, 'chair', u, v + 1.6, PI);
     S(F, ['sausage', 'sausage', 'cup', 'kettle', 'bottle', 'sandwich', 'cookie'], 6, u - 2.3, v - 1, u + 2.3, v + 2.6); },
-  dog(F, u, v){ P(F, 'doghouse', u, v, 0); P(F, 'dish', u + 1, v + 1); S(F, ['bone', 'bone', 'tball', 'slipper'], 5, u - 1.8, v + .8, u + 1.8, v + 2.4); },
+  dog(F, u, v){ P(F, 'doghouse', u, v, 0); P(F, rnd() < .7 ? 'dog' : 'bigdog', u + 1.7, v + 1.3); P(F, 'dish', u + 1, v + 1); S(F, ['bone', 'bone', 'tball', 'slipper'], 5, u - 1.8, v + .8, u + 1.8, v + 2.4); },
   laundry(F, u, v){ P(F, 'laundry', u, v, 0); P(F, 'basket', u + 1.2, v + .8); S(F, ['sock', 'sock', 'sock', 'pillow', 'slipper'], 5, u - 1.9, v - 1.3, u + 1.9, v + 1.5); },
   beds(F, u, v){ D(F, 2, u, v, 4.8, 3.6, SOIL); const k = pick(['cabbage', 'carrot', 'pumpkin', 'melon', 'sunflower', 'cabbage']);
     for (let r = 0; r < 3; r++) for (let i = 0; i < 5; i++) if (rnd() < .85) P(F, k, u - 1.8 + i * .9, v - 1.1 + r * 1.1);
@@ -876,7 +913,7 @@ const SC = {
     S(F, ['backpack', 'backpack', 'kettle', 'boot', 'sausage', 'cup', 'bottle', 'mushroom'], 7, u - 3, v - 3, u + 3, v + 3.5); P(F, 'tourist', u - 1.6, v + 2.8); P(F, 'tourist', u + 2.4, v + 2.6); },
   spot(F, u, v){ P(F, 'umbrella', u, v); P(F, 'sunbed', u - 1, v + .4, 0); if (rnd() < .6) P(F, 'sunbed', u + 1, v + .4, 0); P(F, 'towel', u + 2.3, v, .2);
     S(F, ['slipper', 'beachball', 'bottle', 'icecream', 'pail', 'scoop', 'ring', 'shell'], 4, u - 2.6, v - 2, u + 2.6, v + 2.6); },
-  dump(F, u, v){ P(F, 'dumpster', u - 1, v, 0); P(F, 'dumpster', u + 1, v, 0); S(F, ['box', 'box', 'can', 'can', 'bottle', 'paper', 'boot', 'tire'], 8, u - 3, v + .8, u + 3, v + 3); P(F, 'cat', u, v + 2); },
+  dump(F, u, v){ P(F, 'dumpster', u - 1, v, 0); P(F, 'dumpster', u + 1, v, 0); S(F, ['box', 'box', 'can', 'can', 'bottle', 'paper', 'boot', 'tire'], 8, u - 3, v + .8, u + 3, v + 3); P(F, 'cat', u, v + 2); S(F, ['crow', 'crow', 'pigeon'], 2, u - 3, v - 2, u + 3, v + 3); },
   playground(F, u, v){ DC(F, 2, u, v, 7, PATH); P(F, 'slide', u - 3.5, v - 2, 0); P(F, 'swing', u + 3, v - 2.6, 0); P(F, 'sandbox', u, v + 2.4, 0); P(F, 'carousel', u + 3.7, v + 2.6); P(F, 'seesaw', u - 4.2, v + 3, H);
     SC.bench(F, u, v + 6, PI); S(F, ['pail', 'scoop', 'toycar', 'tball', 'football', 'duck'], 9, u - 5, v - 4, u + 5, v + 5); P(F, 'stroller', u - 2.2, v + 6.2); }
 };
@@ -884,9 +921,14 @@ const SC = {
 // комплекты: всё, что поставила одна сценка, — один набор. Съел целиком — награда. Вложенные сценки входят в набор внешней.
 const SETN = { bbq: 'Барбекю', dog: 'Будка', laundry: 'Стирка', beds: 'Грядка', pool: 'Бассейн', play: 'Детский уголок', junk: 'Хлам', flowers: 'Клумба', tree: 'Под деревом',
   wood: 'Дровник', picnic: 'Пикник', cafe: 'Столик кафе', camp: 'Лагерь', spot: 'Пляжное место', dump: 'Помойка', playground: 'Детская площадка' };
+// крупные комплекты для большого Джема: считаются целиком, без отсева по размеру
+const BIGSET = { cafe: 1, wood: 1 };
 let curSet = null;
 for (const k in SETN){ const f = SC[k]; SC[k] = function(){ if (curSet) return f.apply(null, arguments);
   const s = curSet = { n: SETN[k], items: [], left: 0, done: false, lost: false }; try { f.apply(null, arguments); } finally { curSet = null; }
+  // в зачёт идёт только то, что съедается примерно в одно время: не крупнее ~2,5 мелких вещей набора (по нижней трети).
+  // Крупное (плед, песочница, мангал) остаётся в сцене для красоты, но комплект без него уже собран.
+  if (s.items.length && !BIGSET[k]){ const ss = s.items.map(i => i.s).sort((a, b) => a - b), cap = ss[Math.floor(ss.length * .3)] * 2.5; s.items = s.items.filter(i => i.s <= cap); }
   if (s.items.length >= 3){ s.left = s.items.length; for (const it of s.items) it.set = s; } }; }
 // ——— частный сектор: квартал на четыре участка, каждый лицом к своей улице
 function cellSub(c){
@@ -937,7 +979,7 @@ function lot(F, sL, sR, kind){
   if (home){ S(F, ['bone', 'tball', 'sock', 'slipper', 'sausage', 'cookie', 'cup', 'acorn', 'toycar', 'apple', 'flower', 'sock', 'bone', 'cookie'], 54, -7.5, -4, 7.5, 9.5);
     S(F, ['duck', 'boot', 'pot', 'bucket', 'pillow', 'kettle', 'dish', 'pumpkin', 'roomba', 'football', 'stool', 'gnome'], 12, -11, -3, 11, 11); }
   S(F, ['flower', 'flower', 'flower', 'mushroom', 'apple', 'tball', 'pot', 'bush', 'bucket', 'gnome', 'boot', 'acorn'], 8, -hw + 1, -hd + 1, hw - 1, hd - 1);
-  S(F, ['cat', 'hen', 'pigeon', 'pigeon'], 2, -hw + 2, -hd + 2, hw - 2, hd - 2);
+  S(F, ['cat', 'cat', 'dog', 'hen', 'pigeon', 'pigeon'], 3, -hw + 2, -hd + 2, hw - 2, hd - 2);
 }
 // тротуар вдоль улиц квартала: фонари через один с тем, что положено району
 function streets(c, kit){
@@ -973,7 +1015,7 @@ function cellBlocks(c){
     P(F, 'laundry', -4, -3.5, H); P(F, 'rack', -4, .5, H); P(F, 'laundry', -4, 4.5, H); S(F, ['sock', 'pillow', 'basket', 'slipper'], 3, -6, -5, -2.5, 6);
     for (let k = 0, n = F.d > 44 ? 3 : 2; k < n; k++) P(F, 'garage', hw - 3.2, 3.5 + k * 4.3, -H);
     SC.dump(F, hw - 4.5, -hd + 13.5); if (rnd() < .6) P(F, 'kiosk', -hw + 2.8, hd - 2.8, 0);
-    all(['tree', 'tree', 'bush', 'bush', 'pine'], 9); all(['flower', 'can', 'bottle', 'pigeon', 'cat', 'box', 'football', 'bike', 'scooter', 'tball', 'neighbor', 'postman'], 11);
+    all(['tree', 'tree', 'bush', 'bush', 'pine'], 9); all(['flower', 'can', 'bottle', 'pigeon', 'cat', 'box', 'football', 'bike', 'scooter', 'tball', 'neighbor', 'postman', 'dog', 'cat', 'bigdog'], 11);
   }
   streets(c, ['tree', 'bin', 'bench', 'sign', 'hydrant', 'busstop', 'bike', 'tree', 'tcone', 'bush']);
 }
@@ -1013,7 +1055,7 @@ function cellPark(c){
     if (k === 'grove'){ S(F, ['tree', 'tree', 'tree', 'oak', 'pine', 'bush'], 5, u - 7, v - 7, u + 7, v + 7); S(F, ['acorn', 'acorn', 'mushroom', 'flower', 'pcone'], 6, u - 7, v - 7, u + 7, v + 7); }
     else if (k === 'picnic'){ SC.picnic(F, u - 2.5, v - 1); SC.picnic(F, u + 3, v + 2.5); P(F, 'tree', u + 4, v - 4); S(F, ['neighbor', 'cat', 'stroller'], 2, u - 6, v - 6, u + 6, v + 6); }
     else if (k === 'flowers'){ DC(F, 2, u, v, 3.2, SOIL); ring(F, 'flower', 11, u, v, 2.4); ring(F, 'flower', 5, u, v, 1.2); P(F, 'planter', u, v); SC.bench(F, u, v + 4.8, PI); }
-    else if (k === 'lawn') S(F, ['football', 'frisbee', 'tball', 'neighbor', 'cat', 'stroller', 'bike', 'plaid'], 7, u - 7, v - 7, u + 7, v + 7);
+    else if (k === 'lawn') S(F, ['football', 'frisbee', 'tball', 'neighbor', 'dog', 'stroller', 'bike', 'plaid'], 7, u - 7, v - 7, u + 7, v + 7);
     else SC.play(F, u, v);
   }
   for (const a of [-1, 1]){ SC.bench(F, a * hw * .62, 2.1, PI); SC.bench(F, 2.1, a * hd * .62, -H); P(F, 'lamp', a * hw * .34, -2, a > 0 ? H : -H); P(F, 'lamp', -2, a * hd * .34, 0); }
@@ -1032,28 +1074,28 @@ function cellFarm(c){
     const crop = pick(['pumpkin', 'melon', 'cabbage', 'corn', 'sunflower', 'carrot']), fw = F.w - 6;
     D(F, 2, 0, -hd / 2, fw, hd - 4, 0xb08a5c);
     for (let v = -hd + 4; v < -3; v += 3.2){ D(F, 3, 0, v, fw - 1, 1, SOIL); for (let u = -fw / 2 + 1.2; u < fw / 2 - 1; u += 2.4) if (rnd() < .45) P(F, crop, u + (rnd() - .5) * .4, v); }
-    P(F, 'scarecrow', (rnd() - .5) * fw * .5, -hd / 2 + 1.6, 0);
+    P(F, 'scarecrow', (rnd() - .5) * fw * .5, -hd / 2 + 1.6, 0); S(F, ['crow'], 3, -fw / 2, -hd + 4, fw / 2, -3);
     if (f !== 'field') P(F, f, 0, hd / 2, 0, { f: 1 }); else P(F, 'tractor', (rnd() - .5) * hw, hd * .4);
-    S(F, ['hay', 'hay', 'hay', 'wbarrow', 'bucket', 'farmer', 'milkcan'], 7, -hw + 3, 2, hw - 3, hd - 3);
+    S(F, ['hay', 'hay', 'hay', 'wbarrow', 'bucket', 'farmer', 'milkcan', 'dog', 'cat'], 8, -hw + 3, 2, hw - 3, hd - 3);
   } else if (f === 'pasture'){
     const a = hw - 6, b = hd - 6, an = pick(['cow', 'sheep', 'pig']);
     fline(F, 'rail', -a, a, -b); fline(F, 'rail', -a, a, b, [[0, 2.2]]); fline(F, 'rail', -b + .3, b - .3, -a, null, 1); fline(F, 'rail', -b + .3, b - .3, a, null, 1);
     if (an === 'pig') DC(F, 2, 0, 0, 7, 0x8f6f4f);
     S(F, [an], an === 'cow' ? 5 : 7, -a + 2, -b + 2, a - 2, b - 2); P(F, 'trough', -a + 2.5, 0, H); S(F, ['hay', 'hay', 'milkcan', 'bucket'], 4, -a + 2, -b + 2, a - 2, b - 2);
-    P(F, 'shed', hw - 3, -hd + 3, 0); P(F, 'farmer', 2, b + 2.5);
+    P(F, 'shed', hw - 3, -hd + 3, 0); P(F, 'farmer', 2, b + 2.5); P(F, rnd() < .5 ? 'bigdog' : 'dog', -2.5, b + 2.8);   // пастушья собака у выгона
   } else if (f === 'yard'){
     DC(F, 2, 0, 3, 11, 0xc9b184); P(F, 'barn', 0, -hd + 7, 0); P(F, 'silo', -11.5, -hd + 5); P(F, 'coop', hw - 5, -2, -H);
     S(F, ['hen', 'hen', 'hen', 'egg', 'egg', 'egg'], 12, hw - 12, -6, hw - 2, 4); P(F, 'well', -6, 4); P(F, 'tractor', 6, 6); P(F, 'shed', -hw + 4, 6, H); SC.wood(F, -hw + 5, -4);
-    S(F, ['pig', 'pig', 'cat', 'farmer', 'farmer', 'milkcan', 'milkcan', 'wbarrow', 'bucket', 'hay'], 10, -10, -2, 10, 12); SC.beds(F, -hw + 7, hd - 6); SC.beds(F, hw - 7, hd - 6); P(F, 'doghouse', 9.5, -hd + 13.5, 0);
+    S(F, ['pig', 'pig', 'cat', 'cat', 'dog', 'farmer', 'farmer', 'milkcan', 'milkcan', 'wbarrow', 'bucket', 'hay'], 12, -10, -2, 10, 12); SC.beds(F, -hw + 7, hd - 6); SC.beds(F, hw - 7, hd - 6); P(F, 'bigdog', 7.5, -hd + 15.5); P(F, 'doghouse', 9.5, -hd + 13.5, 0);
   } else if (f === 'hay'){
     for (let i = -2; i <= 2; i++) for (let j = -1; j <= 1; j++) if (rnd() < .75) P(F, 'hay', i * hw * .36 + (rnd() - .5) * 3, j * hd * .5 + (rnd() - .5) * 3);
-    P(F, 'tractor', hw * .5, hd * .7); S(F, ['farmer', 'wbarrow', 'pigeon', 'pigeon', 'bucket'], 5, -hw + 3, -hd + 3, hw - 3, hd - 3);
+    P(F, 'tractor', hw * .5, hd * .7); S(F, ['farmer', 'wbarrow', 'pigeon', 'pigeon', 'bucket', 'dog', 'cat'], 6, -hw + 3, -hd + 3, hw - 3, hd - 3);
   } else if (f === 'rocket'){
     DC(F, 2, 0, 0, 13, 0xbfc3c9); P(F, 'rocket', 0, 0, 0, { f: 1 }); ring(F, 'tcone', 10, 0, 0, 9); ring(F, 'lamp', 4, 0, 0, 13.5); P(F, 'shed', -14, 11, 0); P(F, 'truck', 13, 11, .4);
     S(F, ['clerk', 'clerk', 'clerk', 'box', 'box', 'fridge', 'tcone'], 9, -14, -14, 14, 14);
   }
   S(F, ['tree', 'bush', 'bush', 'tree', 'rock'], 6, -hw + 1, -hd + 1, hw - 1, hd - 1);
-  S(F, ['flower', 'flower', 'carrot', 'egg', 'hen', 'pigeon', 'mushroom', 'cabbage'], 8, -hw + 1, -hd + 1, hw - 1, hd - 1);
+  S(F, ['flower', 'flower', 'carrot', 'egg', 'hen', 'pigeon', 'mushroom', 'cabbage', 'cat'], 8, -hw + 1, -hd + 1, hw - 1, hd - 1);
 }
 // ——— лес и горы
 function cellForest(c){
@@ -1068,11 +1110,11 @@ function cellForest(c){
   all(['mushroom', 'mushroom', 'mushroom', 'pcone', 'pcone', 'acorn', 'flower'], 17); all(['hare', 'hare', 'hedgehog', 'fox', 'deer', 'pigeon'], 5);
 }
 const BIO = {
-  sub:    { cell: cellSub,    rc: 1,  den: .035, fill: ['flower', 'flower', 'apple', 'mushroom', 'tball', 'bone', 'sock', 'acorn', 'pigeon', 'cat', 'bush', 'pot', 'pumpkin', 'gnome', 'bucket', 'football', 'bin', 'bike', 'tree'] },
+  sub:    { cell: cellSub,    rc: 1,  den: .035, fill: ['flower', 'flower', 'apple', 'mushroom', 'tball', 'bone', 'sock', 'acorn', 'pigeon', 'cat', 'cat', 'dog', 'bush', 'pot', 'pumpkin', 'gnome', 'bucket', 'football', 'bin', 'bike', 'tree'] },
   park:   { cell: cellPark,   rc: .5, den: .035, tint: 0x9bd975, pal: GREENS, fill: ['acorn', 'acorn', 'flower', 'flower', 'mushroom', 'pigeon', 'duck', 'bush', 'tree', 'football', 'frisbee', 'bench'] },
-  blocks: { cell: cellBlocks, rc: 2,  den: .035, tint: 0x9acb75, pal: [0x8fc569, 0xa3d47c, 0x9ccb78], fill: ['can', 'bottle', 'box', 'paper', 'pigeon', 'cat', 'tire', 'bin', 'bush', 'bike', 'scooter', 'tree'] },
+  blocks: { cell: cellBlocks, rc: 2,  den: .035, tint: 0x9acb75, pal: [0x8fc569, 0xa3d47c, 0x9ccb78], fill: ['can', 'bottle', 'box', 'paper', 'pigeon', 'cat', 'cat', 'dog', 'bigdog', 'tire', 'bin', 'bush', 'bike', 'scooter', 'tree'] },
   city:   { cell: cellCity,   rc: 2,  den: .03, fill: ['can', 'paper', 'box', 'bottle', 'pigeon', 'tcone', 'bin', 'planter', 'bike', 'scooter', 'lamp'] },
-  farm:   { cell: cellFarm,   rc: .6, den: .035, tint: 0xb2d47a, pal: [0xb9d77c, 0xc7dc86, 0xa9cf72], fill: ['egg', 'carrot', 'cabbage', 'pumpkin', 'melon', 'hen', 'flower', 'hay', 'corn', 'sheep', 'cow', 'bush', 'tree'] },
+  farm:   { cell: cellFarm,   rc: .6, den: .035, tint: 0xb2d47a, pal: [0xb9d77c, 0xc7dc86, 0xa9cf72], fill: ['egg', 'cat', 'dog', 'carrot', 'cabbage', 'pumpkin', 'melon', 'hen', 'flower', 'hay', 'corn', 'sheep', 'cow', 'bush', 'tree'] },
   forest: { cell: cellForest, rc: 0,  den: .04, tint: 0x76bd5e, pal: [0x6fb85a, 0x7cc163, 0x64ad52], fill: ['pcone', 'acorn', 'mushroom', 'mushroom', 'stump', 'rock', 'bush', 'log', 'hare', 'pine', 'pine', 'tree'] },
   beach:  { den: 0, fill: ['shell', 'shell', 'starfish', 'crab', 'pail', 'beachball', 'sandcastle', 'ring', 'towel', 'umbrella', 'palm', 'boat'] },
   shore:  { den: .09, fill: ['shell', 'shell', 'rock', 'rock', 'bush', 'seagull', 'crab', 'boat', 'starfish'] }
@@ -1091,7 +1133,7 @@ function genBeach(){
     if (rnd() < .55) SC.spot(F, (rnd() - .5) * 3, lerp(-hd + 9, hd - 17, rnd()));
     if (rnd() < .3){ const u = (rnd() - .5) * 5, v = hd - 8 - rnd() * 4; P(F, 'sandcastle', u, v); P(F, 'pail', u + .6, v + .3); P(F, 'scoop', u - .5, v + .5); }
     if (rnd() < .12) P(F, 'boat', 0, hd - 5.5, rnd() * TAU); else if (rnd() < .2) P(F, 'surf', (rnd() - .5) * 5, hd - 6 - rnd() * 3);
-    S(F, ['shell', 'shell', 'shell', 'starfish', 'crab', 'beachball', 'slipper', 'seagull', 'bottle', 'ring', 'beachman'], 4, -4.5, -hd + 5, 4.5, hd - 1);
+    S(F, ['shell', 'shell', 'shell', 'starfish', 'crab', 'beachball', 'slipper', 'seagull', 'seagull', 'seagull', 'bottle', 'ring', 'beachman'], 5, -4.5, -hd + 5, 4.5, hd - 1);
   }
   seaM = 4;
   for (const s of [-1, 1]){ const a = WS.ba + s * .8, r = islR(a) - 15; put('lighthouse', Math.cos(a) * r, Math.sin(a) * r, 0, { f: 1 }); }
@@ -1151,7 +1193,7 @@ const LIT = {
   sub: ['leaf', 'coin', 'cap', 'feather', 'twig', 'bone', 'tball', 'apple'], park: ['acorn', 'leaf', 'feather', 'coin', 'papercup', 'icecream', 'berry', 'snail'],
   blocks: ['toycar', 'slipper', 'bag', 'cap', 'can', 'sock', 'coin', 'papercup', 'tball'], city: ['can', 'paper', 'papercup', 'coin', 'keys', 'cap', 'bottle', 'bag'],
   farm: ['carrot', 'egg', 'wheat', 'wheat', 'horseshoe', 'feather', 'twig', 'apple'], forest: ['pcone', 'acorn', 'mushroom', 'berry', 'feather', 'snail', 'leaf', 'twig'],
-  beach: ['shell', 'starfish', 'cap', 'coin', 'feather', 'bottle'], shore: ['shell', 'feather', 'twig', 'cap'] };
+  beach: ['shell', 'starfish', 'cap', 'coin', 'feather', 'bottle', 'seagull'], shore: ['shell', 'feather', 'twig', 'cap', 'seagull'] };
 const MID = {
   sub: ['pot', 'bucket', 'football', 'gnome', 'crate'], park: ['football', 'handbag', 'basket', 'pot', 'branch'], blocks: ['box', 'crate', 'football', 'bucket', 'sack', 'handbag', 'pot'],
   city: ['crate', 'handbag', 'box', 'bucket', 'backpack'], farm: ['sack', 'crate', 'bucket', 'pumpkin', 'milkcan', 'cabbage'], forest: ['branch', 'branch', 'stump', 'backpack', 'basket'],
@@ -1273,10 +1315,18 @@ function occludes(it, X, Z, Y){
     if (d2 > vr * vr || t > 1 + vr / Math.sqrt(L)) return false; t0 = Math.max(0, t - Math.sqrt((vr * vr - d2) / L)); if (t0 > 1) return false; }
   return Y + (cp.y - Y) * t0 < it.y * 2;
 }
+const limbG = {};
+function addLimbs(t, v, mesh, G){
+  const c = G.c;
+  if (t.tl){ const s = t.tl, key = t.k + '_tl_' + v, g = limbG[key] || (limbG[key] = merge([cyl(s.r1, s.r0, s.len, 5, s.cols[v % s.cols.length], 0, s.len / 2, 0)]));
+    const m = new T.Mesh(g, MAT); m.position.set(-c[0], s.y - c[1], s.z - c[2]); m.rotation.x = s.rx; m.castShadow = true; mesh.add(m); mesh.userData.tail = m; mesh.rotation.order = 'YXZ'; }
+  if (t.wg){ const s = t.wg, key = t.k + '_wg', g = limbG[key] || (limbG[key] = merge([box(s.len, .015, s.dep, s.col, s.len / 2, 0, 0)])), w = [];
+    for (const sd of [1, -1]){ const m = new T.Mesh(g, MAT); m.position.set(-c[0] + sd * .04, s.y - c[1], s.z - c[2]); m.rotation.y = sd > 0 ? 0 : PI; m.visible = false; mesh.add(m); w.push(m); } mesh.userData.wg = w; }
+}
 function addItem(t, v, x, z, sc, ry, drv, rr){
   rr = rr || Math.random;
   if (t.s * sc > (t.top || 0)) t.top = t.s * sc;
-  const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = t.q ? t.q * sc : 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
+  const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = t.q ? t.q * sc : 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8; addLimbs(t, v, mesh, G);
   mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true; mesh.visible = false; mesh.matrixAutoUpdate = false;
   const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, ex: t.x ? t.d[0] * sc * .46 : 0, ez: t.d[2] * sc * .46, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rr() * 3, mv: false, hp: rr() * 6, ph: rr() * 6, pop: 0, spd: 0, scared: false, grow: 1, fd: 0, fl: 0, v };
   mesh.position.set(x, it.y, z); mesh.updateMatrix(); items.push(it); alive++;
@@ -1292,7 +1342,7 @@ const FILL_TARGET = 9, FILL_MAX = 1200, FILL_CAP = ISLAND * 0.4;
 let fillT = 0, fillN = 0;
 function refill(){
   const cut = camD * 0.003;
-  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && !it.holder && it.s < cut){ it.got = true; alive--; if (it.set){ it.set.left--; it.set.lost = true; } if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
+  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && !it.holder && !(it.set && !it.set.done) && it.s < cut){ it.got = true; alive--; if (it.set){ it.set.left--; it.set.lost = true; } if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
   if (R >= FILL_CAP || fillN >= FILL_MAX) return;
   const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4, big = R >= 25;
   let near = 0;
@@ -1327,9 +1377,9 @@ function refill(){
   }
 }
 
-function resetGame(){
-  genWorld(QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0); fillerReset();
-  R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; boostT = 0; lastKnock = -9; setsDone = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
+function resetGame(fresh){   // fresh — новый остров даже при ?seed в адресе
+  genWorld(!fresh && QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0); fillerReset();
+  R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; boostT = 0; lastKnock = -9; setsDone = 0; thiefNow = null; thiefT = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R) unlockI++;
@@ -1369,6 +1419,7 @@ showBest();
 const _t = new T.Vector3(), _ax = new T.Vector3(), _q = new T.Quaternion();
 function pickup(it){
   if (it.held){ const h = it.held; it.held = null; h.holder = null; h.np = 0; pickup(h); }   // кот с добычей — забираем и добычу
+  if (it.mesh.userData.wg) for (const w of it.mesh.userData.wg) w.visible = false;
   it.got = true; count++; alive--; it.mesh.material = MAT; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
   const r0 = Math.pow(R, GP); R = Math.pow(r0 + GROW * Math.pow(it.s * feed(it.s), GP), 1 / GP); it.gain = Math.pow(R, GP) - r0;   // gain — чтобы честно отнять, если вещь выбьют
   const dx = it.x - bx, dz = it.z - bz, dy = it.y - R, l = Math.hypot(dx, dy, dz) || 1, rr = R * 0.8;
@@ -1384,7 +1435,8 @@ function pickup(it){
   let tag = '';
   if (it.set){ const s = it.set; s.left--;
     if (s.left <= 0 && !s.done && !s.lost){ s.done = true; setsDone++; boostT = 4; popup(s.n + ' — целиком!', bx, R * 2.4, bz, true); confetti(30, Math.pow(R / R0, .8)); Snd.fan(); }
-    else if (!s.done && !s.lost) tag = ' · ' + s.n + ' ' + (s.items.length - s.left) + '/' + s.items.length; }
+    else if (!s.done && !s.lost){ tag = ' · ' + s.n + ' ' + (s.items.length - s.left) + '/' + s.items.length;
+      if (s.left <= 2) tag += ' — осталось: ' + s.items.filter(i => !i.got).map(i => i.t.n).join(', '); } }
   if (time - lastPop > 0.13 || big || tag){ lastPop = time; popup(it.t.e + ' ' + it.t.n + tag, it.x, it.y + it.s, it.z, false); }
   for (let i = 0; i < (big ? 9 : 4); i++){ const a = Math.random() * TAU, v = R * (1.5 + Math.random() * 2);
     spawnP(it.x, it.y, it.z, Math.cos(a) * v, R * (2 + Math.random() * 3), Math.sin(a) * v, .45 + Math.random() * .3, R * (.05 + Math.random() * .05), i % 2 ? 0xffe27a : 0xfffaf0, R * 14); }
@@ -1418,18 +1470,20 @@ function thiefStep(it, ok, dist, dx, dz, dt){
   if (!ok){ it.ts = 0; return false; }
   const sp = it.t.al.sp * it.sc;
   if (it.ts === 2){ it.th = Math.atan2(dx, dz) + Math.sin(time * 4 + it.ph) * .4; it.mv = true; it.spd = sp * 1.05; it.tt -= dt;
-    if (it.tt <= 0 || dist > 35){ dropHeld(it, false); it.ts = 0; it.cd = time + 20; } return true; }
+    if (it.tt <= 0 || dist > 35){ dropHeld(it, false); it.ts = 0; it.cd = time + 15; } return true; }
   if (it.ts === 1){ it.th = Math.atan2(-dx, -dz); it.mv = true; it.spd = sp * 1.15;
     if (dist > 25){ it.ts = 0; return false; }
     if (dist < R + it.cr + .35){ const a = outer(1, it.s)[0];
-      if (a){ const h = eject(a, it.x, it.z); h.holder = it; h.np = Infinity; it.held = h; it.ts = 2; it.tt = 10; Snd.voice('meow'); popup('Кот стащил: ' + a.t.e + ' ' + a.t.n, it.x, it.y * 2 + .4, it.z, true); }
-      else { it.ts = 0; it.cd = time + 20; } }
+      if (a){ const h = eject(a, it.x, it.z); h.holder = it; h.np = Infinity; it.held = h; it.ts = 2; it.tt = 10; it.gr = time + 1.5; Snd.voice(it.t.al.snd); popup(it.t.n + ' стащил: ' + a.t.e + ' ' + a.t.n, it.x, it.y * 2 + .4, it.z, true); }
+      else { it.ts = 0; it.cd = time + 15; } }
     return true; }
-  if (time > (it.cd || 4) && dist < 14 && dist > R + 2 && Math.random() < dt * .08 && outer(1, it.s).length){ it.ts = 1; return true; }
+  if (time > (it.cd || 4) && time > thiefT && !thiefBusy() && dist < 18 && dist > R + 2 && Math.random() < dt * .12 && outer(1, it.s).length){ it.ts = 1; thiefNow = it; thiefT = time + 8; return true; }
   return false;
 }
+// занят ли кто-то охотой; вор, убежавший за пределы обработки, замирает — бросает добычу и освобождает очередь
+function thiefBusy(){ const t = thiefNow; if (!t || t.got || !t.ts) return false; if (Math.hypot(t.x - bx, t.z - bz) > 40){ dropHeld(t, false); t.ts = 0; return false; } return true; }
 function dropHeld(cat, caught){ const h = cat.held; if (!h) return; cat.held = null; h.holder = null; h.np = time + (caught ? .7 : 0);
-  if (caught){ cat.ts = 0; cat.cd = time + 25; popup('Отдай! ' + h.t.e, cat.x, cat.y * 2 + .4, cat.z, true); Snd.voice('meow'); } }
+  if (caught){ cat.ts = 0; cat.cd = time + 25; popup('Отдай! ' + h.t.e, cat.x, cat.y * 2 + .4, cat.z, true); Snd.voice(cat.t.al.snd); } }
 // гав пугает людей: они роняют то, что несли
 const DROP = { postman: ['paper', 'paper', 'box'], courier: ['box', 'box', 'bag'], granny: ['bag', 'handbag', 'apple', 'basket', 'keys'], neighbor: ['keys', 'cup', 'slipper', 'paper'],
   clerk: ['papercup', 'keys', 'paper', 'handbag'], tourist: ['backpack', 'bottle', 'sandwich', 'pcone'], farmer: ['egg', 'carrot', 'milkcan', 'wheat'], beachman: ['beachball', 'slipper', 'icecream', 'towel'] };
@@ -1476,20 +1530,31 @@ function updItems(dt){
     } else if (it.t.al && dist < cullR){
       const al = it.t.al, flee = play && can && !al.calm && dist < R * 2.5 + 2.5 * it.sc + 1;
       it.tm -= dt;
-      if (it.t.k === 'cat' && thiefStep(it, play && !can, dist, dx, dz, dt)){ if (it.scared) it.scared = false; }
-      else if (flee){ it.th = Math.atan2(dx, dz) + Math.sin(time * 3 + it.ph) * 0.5; it.mv = true; it.spd = al.sp * it.sc; it.scared = true; }
+      if (it.t.bird && (it.airT > 0 || (play && !can && dist < R + 1.3 && !(it.airCd > time)))){ if (!(it.airT > 0)) it.airT = 1 + Math.random() * .6; it.th = Math.atan2(dx, dz) + Math.sin(time * 2 + it.ph) * .6; it.mv = true; it.spd = al.sp * it.sc * 1.1; }   // взлетает от кома, который её не съест
+      else if (it.t.thief && thiefStep(it, play && !can, dist, dx, dz, dt)){ if (it.scared) it.scared = false; }
+      else if (flee){ it.th = Math.atan2(dx, dz) + Math.sin(time * 3 + it.ph) * 0.5; it.mv = true; it.scared = true;
+        // птицы выдыхаются: свежая бежит на 92% скорости кома, за ~3,5 с сдыхает до 50% — догнать трудно, но можно
+        it.spd = it.t.bird ? vmax() * (.5 + .42 * (it.stam === undefined ? 1 : it.stam)) : al.sp * it.sc; }
       else { if (it.scared){ it.scared = false; it.tm = 0; }
         if (it.tm <= 0){ it.tm = 1 + Math.random() * 3; it.mv = Math.random() < 0.6; const hx = it.hx - it.x, hz = it.hz - it.z;
           it.th = hx * hx + hz * hz > 64 ? Math.atan2(hx, hz) : Math.random() * TAU; it.spd = al.sp * it.sc * 0.35; } }
       if (it.mv){
         // шаг только туда, где свободно: если прямо нельзя — пробуем вбок, иначе разворот. Застрявшему внутри разрешаем выйти.
-        const ra = .5 * Math.min(it.t.d[0], it.t.d[2]) * it.sc, st = it.spd * dt, inside = blockAt(it.x, it.z, ra, it); let ok = false;
+        const ra = .5 * Math.min(it.t.d[0], it.t.d[2]) * it.sc, st = it.spd * dt, inside = it.air > .3 || blockAt(it.x, it.z, ra, it); let ok = false;
         for (const tw of [0, .6, -.6, 1.2, -1.2, 2, -2]){ const a = it.th + tw, nx = it.x + Math.sin(a) * st, nz = it.z + Math.cos(a) * st;
           if (inside || !blockAt(nx, nz, ra, it)){ it.x = nx; it.z = nz; if (tw) it.th = a; ok = true; break; } }
         if (!ok){ it.th += PI * (.5 + Math.random()); it.tm = Math.min(it.tm, .4); }
-        it.hp += dt * (flee ? 17 : 9);
+        it.hp += dt * (it.t.bird ? (flee ? 11 : 7) : (flee ? 17 : 9));   // птицы семенят мельче и реже
         if (coast(it.x, it.z) < 2){ it.x *= 0.985; it.z *= 0.985; }
-        hop = Math.abs(Math.sin(it.hp)) * al.hop * it.sc * (flee ? 1.7 : 1); }
+        hop = Math.abs(Math.sin(it.hp)) * al.hop * it.sc * (flee && !it.t.bird ? 1.7 : 1); }
+      // птицы: взлёт и посадка, машут крыльями; коты и собаки: галоп с качанием, вдох-выдох, хвост виляет
+      if (it.t.bird){ it.stam = clamp((it.stam === undefined ? 1 : it.stam) + (flee ? -dt / 3.5 : dt / 4), 0, 1);
+        it.air = clamp((it.air || 0) + (it.airT > 0 ? dt * 3 : -dt * 1.2), 0, 1); if (it.airT > 0){ it.airT -= dt; if (it.airT <= 0) it.airCd = time + 4; }   // после посадки 4 с не взлетает
+        if (it.air > 0) hop = it.air * 1.8 * it.sc + Math.sin(time * 9 + it.ph) * .08 * it.air;
+        const w = m.userData.wg; if (w){ const f = it.air > .05, a = f ? Math.sin(time * 26 + it.ph) * .9 : 0; w[0].visible = w[1].visible = f; w[0].rotation.z = w[1].rotation.z = a; } }
+      else if (it.t.tl){ it.pa = lerp(it.pa || 0, it.mv ? 1 : 0, Math.min(1, dt * 6)); if (!(it.wob > 0)) m.rotation.x = Math.sin(it.hp) * .16 * it.pa;
+        if (it.grow >= 1){ const k = Math.cos(it.hp * 2) * .05 * it.pa + Math.sin(time * 3 + it.ph) * .015 * (1 - it.pa); m.scale.set(it.sc * (1 + k * .4), it.sc * (1 - k), it.sc * (1 + k * .4)); }
+        const tl = m.userData.tail; if (tl){ const ex = it.ts > 0 || flee || it.scared ? 1 : 0; tl.rotation.z = Math.sin(time * (6 + 10 * ex + 4 * it.pa) + it.ph) * (.35 + .25 * ex); } }
       m.rotation.y = lerpAngle(m.rotation.y, it.th, Math.min(1, dt * 10));
       dx = it.x - bx; dz = it.z - bz; dist = Math.hypot(dx, dz);
     }
@@ -1501,11 +1566,11 @@ function updItems(dt){
         if (gap < 1e-6){ const px = it.ex - Math.abs(lx), pz = it.ez - Math.abs(lz); if (px < pz){ ex = lx < 0 ? -1 : 1; ez = 0; gap = -px; } else { ex = 0; ez = lz < 0 ? -1 : 1; gap = -pz; } }
         else { ex /= gap; ez /= gap; }
         ux = -(ex * c + ez * s); uz = ex * s - ez * c;
-      } else { gap = dist - it.cr; ux = dx / (dist || 1); uz = dz / (dist || 1); }
+      } else { gap = dist - (it.t.cone ? coneR(it, -dx, -dz) : it.cr); ux = dx / (dist || 1); uz = dz / (dist || 1); }
       const pen = R * 0.9 - gap;
       if (pen > 0){
         if (can){ pickup(it); continue; }
-        if (it.held) dropHeld(it, true);
+        if (it.held && !(it.gr > time)) dropHeld(it, true);   // сразу после кражи вор ещё рядом — даём фору
         bx -= ux * pen; bz -= uz * pen;
         const vn = vx * ux + vz * uz; if (vn > 0){ vx -= ux * vn * 1.5; vz -= uz * vn * 1.5; if (vn > vmax() * 0.3) bonk(it); }
         dx = it.x - bx; dz = it.z - bz; dist = Math.hypot(dx, dz);
@@ -1574,7 +1639,7 @@ function bark(){
   const w = waves[0].userData.t < waves[1].userData.t ? waves[1] : waves[0]; w.userData.t = 0; w.userData.r = R * 2 + 1.5 * sc; w.position.set(jem.position.x, 0.08, jem.position.z); w.visible = true;
   const rng = R * 3 + 2.5 * sc;
   for (const it of items){ if (it.got) continue; const d = Math.hypot(it.x - bx, it.z - bz); if (d < rng + it.cr){ it.wob = Math.max(it.wob, 0.3); if (it.t.al){ it.tm = 0.8; it.mv = true; it.th = Math.atan2(it.x - bx, it.z - bz); it.spd = it.t.al.sp * it.sc;
-    if (it.held) dropHeld(it, true); else if (it.ts === 1){ it.ts = 0; it.cd = time + 15; } scareDrop(it); } } }
+    if (it.t.bird) it.airT = 1.2 + Math.random() * .6; if (it.held) dropHeld(it, true); else if (it.ts === 1){ it.ts = 0; it.cd = time + 15; } scareDrop(it); } } }
 }
 function mute(){ const m = Snd.toggleMute(); $('bMute').classList.toggle('off', m); $('bMute').setAttribute('aria-label', m ? 'Включить звук' : 'Выключить звук'); }
 function startGame(){
@@ -1601,6 +1666,7 @@ function endGame(){
 }
 function plural(n, a, b, c){ const m = n % 100, k = n % 10; return m > 10 && m < 20 ? c : k === 1 ? a : k > 1 && k < 5 ? b : c; }
 $('bStart').addEventListener('click', startGame);
+$('bReroll').addEventListener('click', () => { if (state === 'title') resetGame(true); });   // новый остров и новое место старта
 $('bResume').addEventListener('click', () => setPause(false));
 $('bQuit').addEventListener('click', quitWalk);
 $('bPause').addEventListener('click', () => setPause(true));
