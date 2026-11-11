@@ -418,6 +418,8 @@ const TY = {}; for (const t of TYPES) TY[t.k] = t;
 for (const k of 'bench table sofa car truck bus shed busstop garage house block tower stadium castle slide tent fence hedge rail laundry sandbox swing seesaw firewood dumpster rack sunbed boat log bike billboard coop trough shop office barn cabin beachhut kiosk fridge washer doghouse'.split(' ')) TY[k].x = 1;
 { const Q = { pine: .3, tree: .4, oak: 1.1, lamp: .15, palm: .3, umbrella: .12, cafe: .5, pond: 7.5, tlight: .12, sign: .08, balloon: .1, scarecrow: .15, statue: 1.1, ferris: 9, wtower: 3, mill: 3, lifeguard: 1.3, crane: 2.2, sunflower: .08, corn: .1, well: .8 }; for (const k in Q) TY[k].q = Q[k]; }
 for (const t of TYPES){ const w = t.d[0], h = t.d[1], d = t.d[2]; t.s = 0.5 * (0.6 * Math.max(w, h, d) + 0.4 * Math.cbrt(w * h * d)); }
+// тонкое считается по толщине: забор съедобен раньше, чем ком перестаёт пролезать в калитку
+TY.fence.s = .45; TY.hedge.s = .65; TY.rail.s = .5;
 /*END*/
 
 // ————————————————————————————— рендер
@@ -776,12 +778,21 @@ function roadAt(x, z, m){
 
 // занятость: кто где стоит, чтобы предметы не влезали друг в друга
 const occ = new Map(), OC = 8;
-function occAdd(x, z, r){ const o = { x, z, r }, i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
+function occAdd(x, z, r, rc){ const o = { x, z, r, rc, it: null }, i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const k = i * 4096 + j; let l = occ.get(k); if (!l) occ.set(k, l = []); l.push(o); }
-  return true; }
+  return o; }
+// пересекается ли круг (x, z, r) с записью: прямоугольник с поворотом (rc) или круг
+function occHit(o, x, z, r){ const dx = x - o.x, dz = z - o.z, rr = r + .03;
+  if (o.rc){ const lx = Math.abs(dx * o.rc.c - dz * o.rc.s) - o.rc.hx, lz = Math.abs(dx * o.rc.s + dz * o.rc.c) - o.rc.hz, ex = lx > 0 ? lx : 0, ez = lz > 0 ? lz : 0; return ex * ex + ez * ez < rr * rr; }
+  const dd = rr + o.r; return dx * dx + dz * dz < dd * dd; }
+// преграда для зверей и людей: всё, кроме мелочи, съеденного и самих зверей
+function blockAt(x, z, r, self){ const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
+  for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (!l) continue;
+    for (let k = 0; k < l.length; k++){ const o = l[k], it = o.it; if (o.skip || (it && (it === self || it.got || it.t.al)) || (!o.rc && o.r < .2)) continue; if (occHit(o, x, z, r)) return true; } }
+  return false; }
 function occFree(x, z, r){ const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (!l) continue;
-    for (let k = 0; k < l.length; k++){ const o = l[k], dd = r + o.r + .03, dx = o.x - x, dz = o.z - z; if (dx * dx + dz * dz < dd * dd) return false; } }
+    for (let k = 0; k < l.length; k++){ if (occHit(l[k], x, z, r)) return false; } }
   return true; }
 function foot(t, x, z, sc, ry, fn){   // контур предмета кружками: вытянутое — цепочкой, остальное — одним
   if (t.x){ const a = t.d[0] * sc / 2, b = t.d[2] * sc / 2, L = Math.max(a, b), S = Math.min(a, b), n = Math.min(12, Math.max(1, Math.round(L / S))), r = Math.max(S, L / n * .55), c = Math.cos(ry), s = Math.sin(ry);
@@ -794,8 +805,13 @@ function put(k, x, z, ry, o){
   const sc = o.sc || (t.x ? 1 : lerp(t.sc ? t.sc[0] : .88, t.sc ? t.sc[1] : 1.15, rnd()));
   if (ry === undefined) ry = rnd() * TAU;
   if (coast(x, z) < seaM + Math.min(.5 * Math.max(t.d[0], t.d[2]) * sc, 30)) return null;
-  if (!t.flat){ if (!o.f && !foot(t, x, z, sc, ry, occFree)) return null; foot(t, x, z, sc, ry, occAdd); }
-  return addItem(t, o.v !== undefined ? o.v : t.v ? (rnd() * t.v) | 0 : 0, x, z, sc, ry, null, rnd);
+  let e = null;
+  if (!t.flat){ if (!o.f && !foot(t, x, z, sc, ry, occFree)) return null;
+    // постройки и заборы записываем честным прямоугольником, иначе в углы домов залезает мелочь
+    e = t.x ? occAdd(x, z, Math.hypot(t.d[0], t.d[2]) * sc / 2, { c: Math.cos(ry), s: Math.sin(ry), hx: t.d[0] * sc / 2, hz: t.d[2] * sc / 2 })
+            : occAdd(x, z, t.q ? Math.max(.35, t.q) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8); }
+  const it = addItem(t, o.v !== undefined ? o.v : t.v ? (rnd() * t.v) | 0 : 0, x, z, sc, ry, null, rnd); if (e) e.it = it;
+  return it;
 }
 
 // рамка участка: u — вдоль улицы, v — от дома к улице (фасад смотрит в +v); q — число четвертей поворота
@@ -854,8 +870,8 @@ function cellSub(c){
     lot(F, q ? east : west, q ? west : east, home ? 'home' : e < .68 ? 'house' : e < .8 ? 'garden' : e < .9 ? 'play' : 'vacant');
   }
   const F0 = lotF(I.x0, I.z0, I.x1, I.z1, 0), w = F0.w, d = F0.d;   // живые изгороди между соседями, в каждой — проход
-  if (two) fline(F0, 'hedge', -w / 2 + .6, w / 2 - .6, 0, [[-w / 4, 1.3], [w / 4, 1.3]]);
-  if (cols === 2) fline(F0, 'hedge', -d / 2 + .6, d / 2 - .6, 0, [[-d / 4, 1.3], [d / 4, 1.3]], 1);
+  if (two) fline(F0, 'hedge', -w / 2 + .6, w / 2 - .6, 0, [[-w / 4, 1.6], [w / 4, 1.6]]);
+  if (cols === 2) fline(F0, 'hedge', -d / 2 + .6, d / 2 - .6, 0, [[-d / 4, 1.6], [d / 4, 1.6]], 1);
   streets(c, ['tree', 'tree', 'hydrant', 'bin', 'bush', 'sign', 'bike', 'bench']);
 }
 function lot(F, sL, sR, kind){
@@ -869,12 +885,12 @@ function lot(F, sL, sR, kind){
     S(F, ['tire', 'tire', 'box', 'tcone', 'can', 'bottle', 'boot', 'football', 'bucket', 'cat', 'flower'], 12, -hw + 1, 0, hw - 1, hd - 1); return; }
   const home = kind === 'home', garden = kind === 'garden';
   const hu = home ? -F.cx : (rnd() - .5) * Math.max(0, w - 17), hv = home ? -8.8 - F.cz : -hd + 5.2;
-  const gs = hu > 0 ? -1 : 1, garage = !home && !garden && w >= 22 && rnd() < .6, gu = gs * (hw - 2.9), gaps = [[hu, 1]];
+  const gs = hu > 0 ? -1 : 1, garage = !home && !garden && w >= 22 && rnd() < .6, gu = gs * (hw - 2.9), gaps = [[hu, 1.4]];
   if (garage) gaps.push([gu, 2]);
   fline(F, 'fence', -hw + .2, hw - .2, hd, gaps);
   if (sL) row(F, 'fence', -hw, -hd + .3, -hw, hd - .45);
   if (sR) row(F, 'fence', hw, -hd + .3, hw, hd - .45);
-  P(F, 'mailbox', hu + 1.5, hd + .6, 0); if (rnd() < .6) P(F, 'bin', hu - 1.6, hd - .8);
+  P(F, 'mailbox', hu + 2.1, hd + .6, 0); if (rnd() < .6) P(F, 'bin', hu - 2.4, hd - .8);
   if (!garden){ P(F, 'house', hu, hv, 0); D(F, 3, hu, (hv + 4 + hd + 2.2) / 2, 1.3, hd + 2.2 - hv - 4, PATH);
     if (rnd() < .7) P(F, 'bush', hu - 3.2, hv + 4.8); if (rnd() < .7) P(F, 'bush', hu + 3.2, hv + 4.8); }
   else { P(F, 'shed', -gs * (hw - 3.6), -hd + 3.4, 0); P(F, 'coop', gs * (hw - 3.6), -hd + 3.6, 0); P(F, 'scarecrow', 0, -hd + 9, 0); P(F, 'well', gs * (hw - 3.6), -hd + 8.5);
@@ -1148,7 +1164,7 @@ function pickStart(){
     const a = rnd() * TAU, rr = Math.sqrt(rnd()) * islR(a), x = Math.cos(a) * rr, z = Math.sin(a) * rr, cl = cellAt(x, z);
     if ((biomeAt(x, z) === 'beach' ? 'beach' : cl && cl.b) !== b || coast(x, z) < 12 || roadAt(x, z, 3) || !occFree(x, z, 3)) continue;
     WS.sx = x; WS.sz = z; WS.sb = b; break find; }
-  occAdd(WS.sx, WS.sz, 1.4);
+  occAdd(WS.sx, WS.sz, 1.4).skip = 1;
   const keys = BIO[WS.sb].fill.concat(['bone', 'tball', 'sock', 'cookie', 'cup', 'boot', 'bucket', 'football']), tiny = keys.filter(k => TY[k].s * PICK <= R0), mid = keys.filter(k => TY[k].s * PICK > R0 && TY[k].s < .5);
   const sow = (L, n, r0, r1) => { for (let i = 0; i < n && L.length; i++) for (let tr = 0; tr < 5; tr++){ const a = rnd() * TAU, r = lerp(r0, r1, Math.sqrt(rnd())), x = WS.sx + Math.cos(a) * r, z = WS.sz + Math.sin(a) * r;
     if (!roadAt(x, z, .5) && put(pick(L), x, z, undefined, { sc: 1 })) break; } };
@@ -1197,7 +1213,7 @@ function genWorld(seed){
   const cs = sites.find(s => s.b === 'city'); take('city', c => -Math.hypot(c.cx - cs.x, c.cz - cs.z), 'tvtower'); take('city', any, 'crane', 2);
   take('blocks', c => { const w = c.in.x1 - c.in.x0, d = c.in.z1 - c.in.z0; return Math.min(w, d) >= 36 && Math.max(w, d) >= 48 && deep(c, 60) ? rnd() : -1e9; }, 'stadium'); take('blocks', any, 'shop', 3);
   take('farm', c => deep(c, 50) ? far(c) : -1e9, 'rocket'); take('farm', any, 'mill', 2); take('farm', any, 'wtower', 1);
-  occAdd(0, 0, 1.4);                                   // место под ком и Джема
+  occAdd(0, 0, 1.4).skip = 1;                                  // место под ком и Джема
   const GIANT = { volcano: 1, mountain: 1, castle: 1, ferris: 1, circus: 1, stadium: 1 };
   cells.sort((p, q) => (GIANT[q.lm] || 0) - (GIANT[p.lm] || 0));
   for (const c of cells) BIO[c.b].cell(c);
@@ -1384,7 +1400,13 @@ function updItems(dt){
       else { if (it.scared){ it.scared = false; it.tm = 0; }
         if (it.tm <= 0){ it.tm = 1 + Math.random() * 3; it.mv = Math.random() < 0.6; const hx = it.hx - it.x, hz = it.hz - it.z;
           it.th = hx * hx + hz * hz > 64 ? Math.atan2(hx, hz) : Math.random() * TAU; it.spd = al.sp * it.sc * 0.35; } }
-      if (it.mv){ it.x += Math.sin(it.th) * it.spd * dt; it.z += Math.cos(it.th) * it.spd * dt; it.hp += dt * (flee ? 17 : 9);
+      if (it.mv){
+        // шаг только туда, где свободно: если прямо нельзя — пробуем вбок, иначе разворот. Застрявшему внутри разрешаем выйти.
+        const ra = .5 * Math.min(it.t.d[0], it.t.d[2]) * it.sc, st = it.spd * dt, inside = blockAt(it.x, it.z, ra, it); let ok = false;
+        for (const tw of [0, .6, -.6, 1.2, -1.2, 2, -2]){ const a = it.th + tw, nx = it.x + Math.sin(a) * st, nz = it.z + Math.cos(a) * st;
+          if (inside || !blockAt(nx, nz, ra, it)){ it.x = nx; it.z = nz; if (tw) it.th = a; ok = true; break; } }
+        if (!ok){ it.th += PI * (.5 + Math.random()); it.tm = Math.min(it.tm, .4); }
+        it.hp += dt * (flee ? 17 : 9);
         if (coast(it.x, it.z) < 2){ it.x *= 0.985; it.z *= 0.985; }
         hop = Math.abs(Math.sin(it.hp)) * al.hop * it.sc * (flee ? 1.7 : 1); }
       m.rotation.y = lerpAngle(m.rotation.y, it.th, Math.min(1, dt * 10));
