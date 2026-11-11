@@ -394,7 +394,24 @@ const TYPES = [
 {k:'barn',n:'Амбар',e:'🏚️',d:[14.6,9,10.6],b:()=>[box(14,5.5,10,0xb5523b,0,2.75,0),roof(14.6,10.6,3.5,0x6b5a55,0,5.5,0),box(3.4,4,.1,K.white,0,2,5.01),box(.3,4,.12,0xb5523b,0,2,5.02)]},
 {k:'silo',n:'Силосная башня',e:'🏭',d:[5,13.5,5],b:()=>[cyl(2.5,2.5,11.5,10,K.lgrey,0,5.75,0),sph(2.5,K.silver,0,11.5,0,1,.8,1,1),box(.5,11,.3,K.dgrey,0,5.5,2.5)]},
 {k:'office',n:'Офис',e:'🏬',d:[14.4,25.6,12.4],v:2,b:v=>{const c=[0xe9dcc6,0xc9d6e2][v],p=[box(14,25,12,c,0,12.5,0),box(14.4,.6,12.4,K.dgrey,0,25.3,0),box(4,3,.2,K.glass,0,1.5,6.01)];for(let f=0;f<6;f++)p.push(box(14.15,1.6,10,0x5b7a99,0,5+f*3.6,0),box(12,1.6,12.15,0x5b7a99,0,5+f*3.6,0));return p;}},
-{k:'crane',n:'Башенный кран',e:'🏗️',d:[4,40.6,24],b:()=>[box(4,1,4,K.dgrey,0,.5,0),box(1.4,40,1.4,K.yellow,0,21,0),box(1.2,1.2,24,K.yellow,0,40,4),box(2,2,2,K.white,0,38.4,1.4),box(2.4,2,3,K.dgrey,0,39.4,-6.5),box(.1,14,.1,K.black,0,32.5,13),box(1,.8,1,K.red,0,25.4,13)]}
+{k:'crane',n:'Башенный кран',e:'🏗️',d:[4,40.6,24],b:()=>[box(4,1,4,K.dgrey,0,.5,0),box(1.4,40,1.4,K.yellow,0,21,0),box(1.2,1.2,24,K.yellow,0,40,4),box(2,2,2,K.white,0,38.4,1.4),box(2.4,2,3,K.dgrey,0,39.4,-6.5),box(.1,14,.1,K.black,0,32.5,13),box(1,.8,1,K.red,0,25.4,13)]},
+// ——— россыпь: то, что валяется между сценками
+{k:'coin',n:'Монетка',e:'🪙',d:[.08,.02,.08],b:()=>[cyl(.04,.04,.015,8,K.yellow,0,.0075,0)]},
+{k:'keys',n:'Ключи',e:'🔑',d:[.13,.03,.07],b:()=>[part(new T.TorusGeometry(.025,.006,4,8),K.silver,-.04,.01,0,H,0,0),box(.08,.012,.02,K.silver,.02,.01,0)]},
+{k:'papercup',n:'Стаканчик',e:'🥤',d:[.09,.12,.09],b:()=>[cyl(.045,.032,.11,7,K.white,0,.055,0),cyl(.047,.047,.015,7,K.red,0,.112,0)]},
+{k:'cap',n:'Крышка',e:'⚪',d:[.06,.015,.06],b:()=>[cyl(.03,.03,.012,8,K.red,0,.006,0)]},
+{k:'bag',n:'Пакет',e:'🛍️',d:[.28,.34,.12],b:()=>[box(.26,.26,.1,K.white,0,.13,0),box(.04,.08,.02,K.white,.07,.3,0),box(.04,.08,.02,K.white,-.07,.3,0),box(.2,.06,.102,K.blue,0,.14,0)]},
+{k:'berry',n:'Ягоды',e:'🫐',d:[.12,.09,.08],b:()=>[sph(.035,K.red,.03,.035,0,1,1,1,0),sph(.03,K.plum,-.03,.03,.02,1,1,1,0),box(.07,.008,.04,K.green,0,.075,0)]},
+{k:'feather',n:'Перо',e:'🪶',d:[.07,.03,.22],b:()=>[sph(.05,K.white,0,.012,.02,.6,.1,1.8,0),box(.006,.006,.2,K.grey,0,.014,0)]},
+{k:'snail',n:'Улитка',e:'🐌',d:[.09,.1,.15],al:{sp:.25,snd:'squeak',hop:0,calm:1},b:()=>[box(.05,.025,.13,0xb9a98a,0,.012,.01),sph(.045,0xb5793c,0,.055,-.02,1,1,1,0),box(.006,.05,.006,0xb9a98a,.015,.04,.07),box(.006,.05,.006,0xb9a98a,-.015,.04,.07)]},
+{k:'leaf',n:'Листик',e:'🍁',d:[.12,.02,.18],v:3,b:v=>[sph(.08,[K.orange,K.yellow,0xb5523b][v],0,.01,0,.7,.08,1.1,0)]},
+{k:'twig',n:'Веточка',e:'🌿',d:[.3,.04,.1],b:()=>[cyl(.012,.018,.3,5,K.dwood,0,.02,0,0,0,H),box(.1,.012,.012,K.dwood,.04,.02,.05,0,.7,0)]},
+{k:'wheat',n:'Колосок',e:'🌾',d:[.06,.32,.06],b:()=>[cyl(.008,.008,.24,4,0xe9c46a,0,.12,0),sph(.03,0xddb357,0,.27,0,.7,1.4,.7,0)]},
+{k:'horseshoe',n:'Подкова',e:'🧲',d:[.14,.03,.14],b:()=>[part(new T.TorusGeometry(.055,.012,4,8,PI*1.4),K.grey,0,.012,0,H,0,0)]},
+{k:'branch',n:'Ветка',e:'🪵',d:[.95,.2,.3],b:()=>[cyl(.04,.07,.9,6,K.dwood,0,.07,0,0,0,H),box(.3,.04,.04,K.dwood,.12,.08,.1,0,.7,0),sph(.1,K.green,-.35,.12,.06,1,.6,1,0)]},
+{k:'handbag',n:'Сумка',e:'👜',d:[.46,.44,.18],b:()=>[box(.46,.32,.18,K.red,0,.16,0),box(.3,.04,.04,K.dwood,0,.42,0),box(.04,.1,.04,K.dwood,.13,.36,0),box(.04,.1,.04,K.dwood,-.13,.36,0)]},
+{k:'crate',n:'Ящик',e:'📦',d:[.57,.42,.47],b:()=>[box(.55,.4,.45,K.wood,0,.2,0),box(.57,.05,.47,K.dwood,0,.38,0),box(.57,.05,.47,K.dwood,0,.05,0)]},
+{k:'sack',n:'Мешок',e:'💰',d:[.48,.62,.48],b:()=>[cyl(.2,.24,.5,8,0xd9c39a,0,.25,0),cyl(.06,.16,.12,7,0xd9c39a,0,.56,0),cyl(.07,.07,.04,7,K.dwood,0,.6,0)]}
 ];
 const TY = {}; for (const t of TYPES) TY[t.k] = t;
 // x — прямоугольный контур столкновений (иначе круг), q — свой радиус круга (стволы, столбы), flat — лежит плашмя и не мешает катиться
@@ -421,6 +438,7 @@ const camera = new T.PerspectiveCamera(42, 1, 0.1, 3000);
 const grad = new T.DataTexture(new Uint8Array([105, 160, 215, 255]), 4, 1, T.LuminanceFormat);
 grad.minFilter = grad.magFilter = T.NearestFilter; grad.generateMipmaps = false; grad.needsUpdate = true;
 const MAT = new T.MeshToonMaterial({ vertexColors: true, gradientMap: grad });
+const FADE = [.8, .6, .42, .28].map(o => { const m = MAT.clone(); m.transparent = true; m.opacity = o; return m; });   // ступени прозрачности для того, что заслоняет Джема
 const toon = c => new T.MeshToonMaterial({ color: c, gradientMap: grad });
 
 const hemi = new T.HemisphereLight(0xdff3ff, 0x9bb07a, 0.58); scene.add(hemi);
@@ -594,14 +612,18 @@ const core = (function(){
 })();
 
 // след на траве
-const NTR = 70;
+// следы лап: подушечка и четыре пальца, пальцы смотрят по ходу (+z)
+const NTR = 120;
 const trail = (function(){
-  const g = new T.CircleGeometry(1, 12); g.rotateX(-H);
-  const m = new T.InstancedMesh(g, new T.MeshBasicMaterial({ color: 0x1f5a2a, transparent: true, opacity: 0.11, depthWrite: false }), NTR);
+  const pos = [];
+  for (const [x, y, sx, sy] of [[0, .22, .42, .36], [-.44, -.22, .17, .2], [-.16, -.5, .18, .22], [.16, -.5, .18, .22], [.44, -.22, .17, .2]]){
+    const c = new T.CircleGeometry(1, 10).toNonIndexed(); c.scale(sx, sy, 1); c.translate(x, y, 0); for (const v of c.attributes.position.array) pos.push(v); c.dispose(); }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.rotateX(-H);
+  const m = new T.InstancedMesh(g, new T.MeshBasicMaterial({ color: 0x3a2a1c, transparent: true, opacity: 0.32, depthWrite: false }), NTR);
   m.frustumCulled = false; m.renderOrder = 1; scene.add(m); return m;
 })();
-const trailP = []; for (let i = 0; i < NTR; i++) trailP.push({ x: 0, z: 0, r: 0, t: -99 });
-let trailI = 0, trailLX = 0, trailLZ = 0;
+const trailP = []; for (let i = 0; i < NTR; i++) trailP.push({ x: 0, z: 0, r: 0, t: -99, a: 0 });
+let trailI = 0, trailLX = 0, trailLZ = 0, trailS = 1;
 
 // частицы
 const NP = 240;
@@ -1074,16 +1096,71 @@ function buildGround(){
   // травинки вокруг дома — не на асфальте и не сквозь вещи
   const m = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), col = new T.Color(), v = new T.Vector3(), sv = new T.Vector3();
   for (let i = 0; i < NTUFT; i++){ let x = 0, z = 0, s = 0;
-    for (let tr = 0; tr < 5; tr++){ const rr = 4.8 + Math.pow(rnd(), 1.6) * 110, a = rnd() * TAU; x = Math.cos(a) * rr; z = Math.sin(a) * rr;
+    for (let tr = 0; tr < 5; tr++){ const rr = 4.8 + Math.pow(rnd(), 1.6) * 110, a = rnd() * TAU; x = WS.sx + Math.cos(a) * rr; z = WS.sz + Math.sin(a) * rr; const bb = biomeAt(x, z); if (!bb || bb === 'beach') continue;
       const cl = cellAt(x, z); if (roadAt(x, z, 2.6) || (cl && cl.b === 'city') || !occFree(x, z, .15)) continue; s = 0.8 + rnd() * 1.6 + rr * 0.012; break; }
     e.set((rnd() - .5) * .5, rnd() * TAU, (rnd() - .5) * .5); q.setFromEuler(e); m.compose(v.set(x, 0, z), q, sv.set(s, s * (0.7 + rnd()), s));
     tufts.setMatrixAt(i, m); col.set(GREENS[i % 5]).multiplyScalar(0.86); tufts.setColorAt(i, col); }
   tufts.instanceMatrix.needsUpdate = true; if (tufts.instanceColor) tufts.instanceColor.needsUpdate = true;
 }
 
+// ——— россыпь: кучки мелочи у объектов, дорожки между сценками и досев там, где всё ещё пусто
+const LIT = {
+  sub: ['leaf', 'coin', 'cap', 'feather', 'twig', 'bone', 'tball', 'apple'], park: ['acorn', 'leaf', 'feather', 'coin', 'papercup', 'icecream', 'berry', 'snail'],
+  blocks: ['toycar', 'slipper', 'bag', 'cap', 'can', 'sock', 'coin', 'papercup', 'tball'], city: ['can', 'paper', 'papercup', 'coin', 'keys', 'cap', 'bottle', 'bag'],
+  farm: ['carrot', 'egg', 'wheat', 'wheat', 'horseshoe', 'feather', 'twig', 'apple'], forest: ['pcone', 'acorn', 'mushroom', 'berry', 'feather', 'snail', 'leaf', 'twig'],
+  beach: ['shell', 'starfish', 'cap', 'coin', 'feather', 'bottle'], shore: ['shell', 'feather', 'twig', 'cap'] };
+const MID = {
+  sub: ['pot', 'bucket', 'football', 'gnome', 'crate'], park: ['football', 'handbag', 'basket', 'pot', 'branch'], blocks: ['box', 'crate', 'football', 'bucket', 'sack', 'handbag', 'pot'],
+  city: ['crate', 'handbag', 'box', 'bucket', 'backpack'], farm: ['sack', 'crate', 'bucket', 'pumpkin', 'milkcan', 'cabbage'], forest: ['branch', 'branch', 'stump', 'backpack', 'basket'],
+  beach: ['beachball', 'sandcastle', 'handbag', 'ring'], shore: ['branch', 'crate', 'ring'] };
+const ANC = { pine: ['pcone', 'pcone', 'twig', 'mushroom'], oak: ['acorn', 'acorn', 'leaf', 'twig'], tree: ['leaf', 'leaf', 'berry', 'feather'], stump: ['mushroom', 'mushroom', 'snail'], log: ['mushroom', 'snail', 'twig'], rock: ['snail', 'twig', 'feather'] };
+const TRAIL = { sub: ['cookie', 'bone'], park: ['acorn', 'coin'], blocks: ['cap', 'coin'], city: ['coin', 'cap'], farm: ['wheat', 'carrot'], forest: ['pcone', 'berry'], beach: ['shell'], shore: ['shell'] };
+const SPOT = new Set('bench busstop kiosk fountain statue cafe planter dumpster bin garage grill doghouse sandbox slide swing campfire tent cabin stump well coop trough shed umbrella lifeguard beachhut'.split(' '));
+const bioOf = (x, z) => { const b = biomeAt(x, z), c = cellAt(x, z); return b === 'beach' ? b : (c && c.b) || b; };
+function tinyNear(x, z, r){ let n = 0; const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
+  for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (l) for (const o of l) if (o.r < .25 && (o.x - x) * (o.x - x) + (o.z - z) * (o.z - z) < r * r) n++; }
+  return n; }
+function clump(x, z, n, r0, r1, L){ for (let i = 0; i < n; i++) for (let tr = 0; tr < 3; tr++){ const a = rnd() * TAU, r = lerp(r0, r1, rnd()), px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (!roadAt(px, pz, .3) && put(pick(L), px, pz)) break; } }
+function crumbs(x0, z0, x1, z1, k, strict){   // цепочка одинаковых вещей от точки к точке, чуть виляя
+  const len = Math.hypot(x1 - x0, z1 - z0), n = Math.floor(len / 1.4); if (n < 5) return;
+  const nx = -(z1 - z0) / len, nz = (x1 - x0) / len, ph = rnd() * TAU, amp = .5 + rnd() * 1.5, pts = [];
+  for (let i = 1; i < n; i++){ const f = i / n, o = Math.sin(f * TAU + ph) * amp * Math.sin(f * PI), x = lerp(x0, x1, f) + nx * o, z = lerp(z0, z1, f) + nz * o; if (!roadAt(x, z, .3) && occFree(x, z, .1)) pts.push(x, z); }
+  if (strict && pts.length / 2 < (n - 1) * .7) return;
+  for (let i = 0; i < pts.length; i += 2) put(k, pts[i], pts[i + 1], undefined, { sc: 1 });
+}
+function genLitter(){
+  seaM = 1; const A = [];
+  for (const it of items.slice()){ if (it.drv) continue; const k = it.t.k, b = bioOf(it.x, it.z); if (!b) continue; const sp = SPOT.has(k); if (sp) A.push(it);
+    const L = ANC[k] || (sp ? LIT[b] : null); if (L && rnd() < .3){ const c = it.ex ? Math.max(it.ex, it.ez) : it.cr; clump(it.x, it.z, 2 + ((rnd() * 4) | 0), c + .3, c + 1.8, L); } }
+  WS.anch = A;
+  for (const a of A){ if (rnd() > .22) continue; let best = null, bd = 35;
+    for (const o of A){ const d = Math.hypot(o.x - a.x, o.z - a.z); if (d > 10 && d < bd){ bd = d; best = o; } }
+    if (best) crumbs(a.x, a.z, best.x, best.z, pick(TRAIL[bioOf(a.x, a.z)]), true); }
+  const st = 9, ext = ISLAND * 1.25;
+  for (let x = -ext; x < ext; x += st) for (let z = -ext; z < ext; z += st){ const px = x + rnd() * st, pz = z + rnd() * st, b = bioOf(px, pz); if (!b || roadAt(px, pz, .5)) continue;
+    if (tinyNear(px, pz, 4.5) < 1) clump(px, pz, 3, 0, 2.5, LIT[b]);
+    if (rnd() < .33) clump(px, pz, 1, 1, 5, MID[b]); }
+  seaM = 4;
+}
+// старт: случайный биом, случайное свободное место, вокруг — мелочь этого биома, чтобы маленькому кому было с чего начать
+function pickStart(){
+  WS.sx = WS.sz = 0; WS.sb = 'sub';
+  find: for (const b of shuffle(['sub', 'park', 'blocks', 'city', 'farm', 'forest', 'beach'])) for (let tr = 0; tr < 500; tr++){
+    const a = rnd() * TAU, rr = Math.sqrt(rnd()) * islR(a), x = Math.cos(a) * rr, z = Math.sin(a) * rr, cl = cellAt(x, z);
+    if ((biomeAt(x, z) === 'beach' ? 'beach' : cl && cl.b) !== b || coast(x, z) < 12 || roadAt(x, z, 3) || !occFree(x, z, 3)) continue;
+    WS.sx = x; WS.sz = z; WS.sb = b; break find; }
+  occAdd(WS.sx, WS.sz, 1.4);
+  const keys = BIO[WS.sb].fill.concat(['bone', 'tball', 'sock', 'cookie', 'cup', 'boot', 'bucket', 'football']), tiny = keys.filter(k => TY[k].s * PICK <= R0), mid = keys.filter(k => TY[k].s * PICK > R0 && TY[k].s < .5);
+  const sow = (L, n, r0, r1) => { for (let i = 0; i < n && L.length; i++) for (let tr = 0; tr < 5; tr++){ const a = rnd() * TAU, r = lerp(r0, r1, Math.sqrt(rnd())), x = WS.sx + Math.cos(a) * r, z = WS.sz + Math.sin(a) * r;
+    if (!roadAt(x, z, .5) && put(pick(L), x, z, undefined, { sc: 1 })) break; } };
+  sow(tiny, 45, 1.6, 9); sow(mid, 14, 3, 14);
+  // от старта — дорожки к ближайшим местам в разные стороны: сразу видно, куда катить
+  const ang = [], near = WS.anch.map(a => [Math.hypot(a.x - WS.sx, a.z - WS.sz), a]).filter(e => e[0] > 10 && e[0] < 55).sort((p, q) => p[0] - q[0]);
+  for (const e of near){ if (ang.length >= 3) break; const t = Math.atan2(e[1].z - WS.sz, e[1].x - WS.sx); if (ang.some(o => Math.abs(((t - o) % TAU + TAU + PI) % TAU - PI) < 1)) continue; ang.push(t); crumbs(WS.sx, WS.sz, e[1].x, e[1].z, pick(TRAIL[WS.sb]), false); }
+}
 function genWorld(seed){
-  for (const it of items){ const m = it.mesh; if (m.parent === world) m.parent = null; else if (m.parent) m.parent.remove(m); }
-  world.children.length = 0; items.length = 0; attached.length = 0; occ.clear(); alive = 0; seaM = 4;
+  for (const it of attached) ballG.remove(it.mesh);
+  world.children.length = 0; bkMap.clear(); bkAll.length = 0; bkAct = []; bkI0 = NaN; items.length = 0; attached.length = 0; occ.clear(); alive = 0; seaM = 4;
   for (const t of TYPES) t.top = 0;
   rnd = mulberry32(seed);
   // берег
@@ -1126,16 +1203,42 @@ function genWorld(seed){
   cells.sort((p, q) => (GIANT[q.lm] || 0) - (GIANT[p.lm] || 0));
   for (const c of cells) BIO[c.b].cell(c);
   for (let i = 0; i < 9; i++) GD[3].push(part(new T.PlaneGeometry(0.98, 9), i % 2 ? 0xd9a066 : 0xcf955b, -4 + i, GY[3] + .004, 0, -H));   // веранда, с которой всё начинается
-  genBeach(); genRoads(); genScatter(); buildGround();
+  genBeach(); genRoads(); genScatter(); genLitter(); pickStart(); buildGround();
   UNL.length = 0; for (const t of TYPES) if (t.top > 0) UNL.push(t); UNL.sort((a, b) => a.top - b.top);
+}
+// Мир поделён на участки 32×32 м. Далёкие участки отцеплены от сцены: ни логика, ни рендер их не перебирают.
+// В bkAll — то, что нужно всегда: машины и гиганты, видные издалека.
+const BK = 32, bkMap = new Map(), bkAll = []; let bkAct = [], bkI0 = NaN, bkI1 = 0, bkJ0 = 0, bkJ1 = 0, bkStamp = 0;
+function bkActivate(rad){
+  const lim = Math.ceil(ISLAND * 1.35 / BK), i0 = clamp(Math.floor((bx - rad) / BK), -lim, lim), i1 = clamp(Math.floor((bx + rad) / BK), -lim, lim), j0 = clamp(Math.floor((bz - rad) / BK), -lim, lim), j1 = clamp(Math.floor((bz + rad) / BK), -lim, lim);
+  if (i0 === bkI0 && i1 === bkI1 && j0 === bkJ0 && j1 === bkJ1) return;
+  bkI0 = i0; bkI1 = i1; bkJ0 = j0; bkJ1 = j1; bkStamp++; const n = [];
+  for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const b = bkMap.get(i * 4096 + j); if (b){ b.st = bkStamp; n.push(b); if (!b.on){ b.on = true; world.add(b.g); } } }
+  for (const b of bkAct) if (b.st !== bkStamp){ b.on = false; world.remove(b.g); }
+  bkAct = n;
+}
+// заслоняет ли предмет линию от кома к камере: вертикальный цилиндр или коробка, сравниваем высоту линии в точке входа
+function occludes(it, X, Z, Y){
+  const cp = camera.position, ux = cp.x - X, uz = cp.z - Z, ox = it.x - X, oz = it.z - Z; if (ox * ux + oz * uz <= 0) return false;
+  let t0;
+  if (it.ex){ const c = Math.cos(it.ry), s = Math.sin(it.ry), ax = -(ox * c - oz * s), az = -(ox * s + oz * c), dx = ux * c - uz * s, dz = ux * s + uz * c, hx = it.ex * 1.09 + R * .5, hz = it.ez * 1.09 + R * .5;
+    let a = 0, b = 1;
+    if (Math.abs(dx) < 1e-6){ if (Math.abs(ax) > hx) return false; } else { const p = (-hx - ax) / dx, q = (hx - ax) / dx; a = Math.max(a, Math.min(p, q)); b = Math.min(b, Math.max(p, q)); }
+    if (Math.abs(dz) < 1e-6){ if (Math.abs(az) > hz) return false; } else { const p = (-hz - az) / dz, q = (hz - az) / dz; a = Math.max(a, Math.min(p, q)); b = Math.min(b, Math.max(p, q)); }
+    if (a > b) return false; t0 = a;
+  } else { const vr = .5 * Math.max(it.t.d[0], it.t.d[2]) * it.sc + R * .5, L = ux * ux + uz * uz || 1, t = (ox * ux + oz * uz) / L, px = ux * t - ox, pz = uz * t - oz, d2 = px * px + pz * pz;
+    if (d2 > vr * vr || t > 1 + vr / Math.sqrt(L)) return false; t0 = Math.max(0, t - Math.sqrt((vr * vr - d2) / L)); if (t0 > 1) return false; }
+  return Y + (cp.y - Y) * t0 < it.y * 2;
 }
 function addItem(t, v, x, z, sc, ry, drv, rr){
   rr = rr || Math.random;
   if (t.s * sc > (t.top || 0)) t.top = t.s * sc;
   const G = getGeo(t, v), mesh = new T.Mesh(G.g, MAT), cr = t.q ? t.q * sc : 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
   mesh.scale.setScalar(sc); mesh.rotation.y = ry; mesh.castShadow = true; mesh.receiveShadow = true; mesh.visible = false; mesh.matrixAutoUpdate = false;
-  const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, ex: t.x ? t.d[0] * sc * .46 : 0, ez: t.d[2] * sc * .46, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rr() * 3, mv: false, hp: rr() * 6, ph: rr() * 6, pop: 0, spd: 0, scared: false, grow: 1 };
-  mesh.position.set(x, it.y, z); mesh.updateMatrix(); world.add(mesh); items.push(it); alive++;
+  const it = { t, x, z, y: G.hh * sc, s: t.s * sc, cr, sc, ry, ex: t.x ? t.d[0] * sc * .46 : 0, ez: t.d[2] * sc * .46, mesh, got: false, wob: 0, drv, hx: x, hz: z, th: ry, tm: rr() * 3, mv: false, hp: rr() * 6, ph: rr() * 6, pop: 0, spd: 0, scared: false, grow: 1, fd: 0, fl: 0 };
+  mesh.position.set(x, it.y, z); mesh.updateMatrix(); items.push(it); alive++;
+  if (drv || cr > 16){ bkAll.push(it); world.add(mesh); }
+  else { const k = Math.floor(x / BK) * 4096 + Math.floor(z / BK); let b = bkMap.get(k); if (!b){ b = { g: new T.Group(), list: [], on: false, st: 0 }; b.g.matrixAutoUpdate = false; bkMap.set(k, b); bkI0 = NaN; } b.list.push(it); b.g.add(mesh); }
   return it;
 }
 
@@ -1146,7 +1249,7 @@ const FILL_TARGET = 9, FILL_MAX = 1200, FILL_CAP = ISLAND * 0.4;
 let fillT = 0, fillN = 0;
 function refill(){
   const cut = camD * 0.003;
-  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && it.s < cut){ it.got = true; alive--; world.remove(it.mesh); } }
+  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && it.s < cut){ it.got = true; alive--; if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
   if (R >= FILL_CAP || fillN >= FILL_MAX) return;
   const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4, big = R >= 25;
   let near = 0;
@@ -1155,7 +1258,7 @@ function refill(){
     const dx = it.x - bx, dz = it.z - bz; if (dx * dx + dz * dz < D * D) near++; }
   if (near >= FILL_TARGET) return;
   const fits = k => { const t = TY[k]; return t.s * 0.75 <= hi && t.s * 1.2 >= lo; }, b = biomeAt(bx, bz);
-  let pool = (big ? FILLBIG : b ? BIO[b].fill : WILD).filter(fits); if (!pool.length) pool = (big ? FILLBIG : WILD).filter(fits);
+  let pool = (big ? FILLBIG : b ? BIO[b].fill.concat(LIT[b], MID[b]) : WILD).filter(fits); if (!pool.length) pool = (big ? FILLBIG : WILD).filter(fits);
   if (!pool.length) return;
   for (let k = Math.min(4, FILL_TARGET - near); k > 0; k--){
     const t = TY[pool[(Math.random() * pool.length) | 0]];
@@ -1183,7 +1286,7 @@ function refill(){
 
 function resetGame(){
   genWorld(QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0);
-  R = Rs = R0; bx = bz = vx = vz = 0; count = 0; combo = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
+  R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R) unlockI++;
@@ -1222,8 +1325,8 @@ showBest();
 // ————————————————————————————— подбор и столкновения
 const _t = new T.Vector3(), _ax = new T.Vector3(), _q = new T.Quaternion();
 function pickup(it){
-  it.got = true; count++; alive--; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
-  R = Math.pow(Math.pow(R, GP) + GROW * Math.pow(it.s, GP), 1 / GP);
+  it.got = true; count++; alive--; it.mesh.material = MAT; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
+  R = Math.pow(Math.pow(R, GP) + GROW * Math.pow(it.s * feed(it.s), GP), 1 / GP);
   const dx = it.x - bx, dz = it.z - bz, dy = it.y - R, l = Math.hypot(dx, dy, dz) || 1, rr = R * 0.8;
   _t.set(bx + dx / l * rr, R + dy / l * rr, bz + dz / l * rr);
   ballG.position.set(bx, R, bz); ballG.updateMatrixWorld(true);
@@ -1257,9 +1360,11 @@ function bonk(it){
   if (time - lastWarn > 1.6){ lastWarn = time; popup('Рано! Нужен ком ⌀ ' + fmt(it.s * PICK), it.x, it.y + it.s * 1.2, it.z, false); }
 }
 function updItems(dt){
-  const play = state === 'play', cullR = play ? camD * 3.4 + 12 : 420, minS = camD * 0.0035, shS = camD * 0.012;
-  for (let i = 0; i < items.length; i++){
-    const it = items[i]; if (it.got) continue;
+  const play = state === 'play', cullR = state === 'title' ? 70 : camD * 3.4 + 12, minS = camD * 0.005, shS = camD * 0.03;
+  bkActivate(DBGC ? 1e5 : cullR + 24);   // запас: крупные вещи и разбежавшиеся звери могут стоять за границей своего участка
+  for (let li = -1; li < bkAct.length; li++){ const L = li < 0 ? bkAll : bkAct[li].list;
+  for (let i = 0; i < L.length; i++){
+    const it = L[i]; if (it.got) continue;
     const m = it.mesh, d = it.drv;
     let dx = it.x - bx, dz = it.z - bz, dist = Math.sqrt(dx * dx + dz * dz);
     if (!d && !DBGC && dist - it.cr > cullR){ if (m.visible) m.visible = false; continue; }   // далёкое и неподвижное — сразу мимо
@@ -1303,19 +1408,28 @@ function updItems(dt){
         dx = it.x - bx; dz = it.z - bz; dist = Math.hypot(dx, dz);
       }
     }
-    const vis = DBGC ? it.s > camD * 0.002 : dist - it.cr < cullR && it.s > minS && it.s > dist * 0.004; m.visible = vis;
+    const vis = DBGC ? it.s > camD * 0.002 : dist - it.cr < cullR && it.s > minS && it.s > dist * 0.006; m.visible = vis;
+    const gr = it.grow < 1, dyn = d || it.t.al || it.wob > 0 || gr;   // неподвижному матрицу не пересчитываем
     if (it.grow < 1){ it.grow = Math.min(1, it.grow + dt * 2.2); const g = it.grow, e = 1 + 2.2 * Math.pow(g - 1, 3) + 1.2 * Math.pow(g - 1, 2); m.scale.setScalar(Math.max(0.001, it.sc * e)); }
-    if (vis){ m.castShadow = it.s > shS; m.position.set(it.x, it.y * (it.grow < 1 ? it.grow : 1) + hop, it.z);
+    if (vis) m.castShadow = it.s > shS;
+    const oc = vis && !DBGC && it.y * 2 > R * .6 && dist - Math.max(it.cr, it.ex, it.ez) * 1.3 < camD && (occludes(it, bx, bz, R) || occludes(it, dogX, dogZ, jem.scale.x * .4)) ? 1 : 0;
+    if (oc || it.fd > 0){ it.fd += (oc - it.fd) * Math.min(1, dt * 9); if (!oc && it.fd < .02) it.fd = 0; const l = Math.round(it.fd * 4); if (l !== it.fl){ it.fl = l; m.material = l ? FADE[l - 1] : MAT; } }
+    if (dyn && (vis || gr)){ m.position.set(it.x, it.y * (it.grow < 1 ? it.grow : 1) + hop, it.z);
       if (it.wob > 0.002){ it.wob *= Math.exp(-5 * dt); m.rotation.z = Math.sin(time * 28) * it.wob; m.rotation.x = Math.cos(time * 23) * it.wob * .6; }
       else if (it.wob > 0){ it.wob = 0; m.rotation.z = m.rotation.x = 0; }
       m.updateMatrix(); }
-  }
+  } }
   for (let i = 0; i < attached.length; i++){ const a = attached[i]; let s = 1;
     if (a.pop > 0){ a.pop = Math.max(0, a.pop - dt * 3.2); s += Math.sin(a.pop * PI) * 0.45 * a.pop; }
     if (a.t.al && !a.t.al.calm) s *= 1 + Math.sin(time * 15 + a.ph) * 0.07;
     a.mesh.scale.setScalar(a.bs * s); a.mesh.castShadow = a.s > R * 0.12; }
 }
-const vmax = () => 3.4 * Math.pow(R / R0, 0.8);
+// Прогрессия. Скорость растёт медленнее размера (VEXP < 1), иначе большой ком пролетает остров за секунды.
+// feed — сколько роста даёт предмет: то, что намного меньше кома, кормит слабо. Включается плавно после ⌀2 м, начало игры не трогает.
+// Числа подобраны ботом: от ⌀3 м (заборы) до ⌀80–120 м у бота 12–16 минут, у живого игрока примерно 5–8.
+let VEXP = 0.6, DIMK = 0.7, DIMP = 1.2;
+const vmax = () => 3.4 * Math.pow(Math.min(R, 1.5) / R0, 0.8) * Math.pow(Math.max(R, 1.5) / 1.5, VEXP);   // до ⌀3 м — как было
+const feed = s => { const k = DIMK * clamp(R - 1, 0, 1); return k > 0 ? Math.min(1, Math.pow(s / (k * R), DIMP)) : 1; };
 
 // ————————————————————————————— управление
 const keys = {}; const joy = { on: false, id: -1, sx: 0, sy: 0, x: 0, y: 0 };
@@ -1421,7 +1535,7 @@ function update(dt, raw){
   const sp = Math.hypot(vx, vz); spN += (clamp(sp / vm, 0, 1) - spN) * Math.min(1, dt * 8);
   const ds = 0.78 * Math.pow(R / R0, 0.55);
   let tx, tz;
-  if (state === 'title'){ tx = .62; tz = .12; ha = lerpAngle(ha, .35, Math.min(1, dt * 4)); }
+  if (state === 'title'){ tx = bx + .62; tz = bz + .12; ha = lerpAngle(ha, .35, Math.min(1, dt * 4)); }
   else {
     if (sp > vm * 0.06) ha = lerpAngle(ha, Math.atan2(vx, vz), 1 - Math.exp(-9 * dt));
     const hd = 0.5 * ds, off = hd < R ? Math.sqrt(R * R - (R - hd) * (R - hd)) : R, dd = off + 0.6 * ds;
@@ -1457,10 +1571,11 @@ function update(dt, raw){
   // пыль из-под лап
   dustT -= dt; if (spN > 0.4 && dustT <= 0){ dustT = 0.05; spawnP(dogX + (Math.random() - .5) * .2 * ds, 0.04 * ds, dogZ + (Math.random() - .5) * .2 * ds, -vx * .12 + (Math.random() - .5) * ds, (.5 + Math.random()) * ds, -vz * .12 + (Math.random() - .5) * ds, .5 + Math.random() * .3, (.035 + Math.random() * .035) * ds, 0xf3ead2, -0.5 * ds); }
   // след
-  if (Math.hypot(bx - trailLX, bz - trailLZ) > R * 0.85){ trailLX = bx; trailLZ = bz; const p = trailP[trailI]; p.x = bx; p.z = bz; p.r = R * 0.72; p.t = time; trailI = (trailI + 1) % NTR; }
-  _qi.set(0, 0, 0, 1);
+  // шаг — отпечаток, поочерёдно левой и правой лапой
+  if (state === 'play' && jumpY === 0 && Math.hypot(dogX - trailLX, dogZ - trailLZ) > 0.26 * ds){ trailLX = dogX; trailLZ = dogZ; trailS = -trailS;
+    const p = trailP[trailI], o = trailS * 0.09 * ds; p.x = dogX + Math.cos(ha) * o; p.z = dogZ - Math.sin(ha) * o; p.r = 0.1 * ds; p.a = ha; p.t = time; trailI = (trailI + 1) % NTR; }
   for (let i = 0; i < NTR; i++){ const p = trailP[i], age = time - p.t, k = age > 7 ? 0 : age > 5 ? 1 - (age - 5) / 2 : Math.min(1, age * 6), s = p.r * k;
-    _m4.compose(_p.set(p.x, 0.07, p.z), _qi, _s.set(s, 1, s)); trail.setMatrixAt(i, _m4); }
+    _qi.setFromEuler(_e.set(0, p.a, 0)); _m4.compose(_p.set(p.x, 0.07, p.z), _qi, _s.set(s, 1, s)); trail.setMatrixAt(i, _m4); }
   trail.instanceMatrix.needsUpdate = true;
   // частицы
   for (let i = 0; i < NP; i++){ const p = parts[i]; let s = 0;
@@ -1487,7 +1602,7 @@ function updCamera(dt){
   camD += (dT - camD) * k; camP += (pT - camP) * k;
   const lead = state === 'play' ? 0.22 : 0, kk = 1 - Math.exp(-6 * dt);
   const ttl = state === 'title';
-  const fx = ttl ? (portrait ? 0.32 : -0.35) : bx + vx * lead, fz = ttl ? (portrait ? 0.05 : 0.45) : bz + vz * lead;
+  const fx = ttl ? bx + (portrait ? 0.32 : -0.35) : bx + vx * lead, fz = ttl ? bz + (portrait ? 0.05 : 0.45) : bz + vz * lead;
   ctX += (fx - ctX) * kk; ctZ += (fz - ctZ) * kk;
   shake *= Math.exp(-7 * dt); const sh = (RM ? 0.15 : 1) * shake * camD * 0.02;
   const cyT = ttl ? (portrait ? -0.75 : 0.2) : Rs * 0.9; camY += (cyT - camY) * kk; const cy = camY, cp = Math.cos(camP);
@@ -1531,7 +1646,7 @@ function frame(now){
 
 resize(); resetGame(); state = 'title';
 window.__jem = { get R(){ return R; }, set R(v){ R = v; }, items, TYPES, get world(){ return WS; }, get alive(){ return alive; }, biomeAt, roadAt, get state(){ return state; }, startGame, endGame, pickup };
-if (QS.get('play')){ const at = (QS.get('at') || '0,0').split(',').map(Number); bx = at[0]; bz = at[1]; dogX = bx; dogZ = bz + 1; R = Rs = +QS.get('play'); camD = 5.6 * Math.pow(R / R0, 0.8); startGame(); }   // ?play=радиус&at=x,z — сразу в игру, для проверки
+if (QS.get('play')){ const at = (QS.get('at') || bx + ',' + bz).split(',').map(Number); bx = at[0]; bz = at[1]; dogX = bx; dogZ = bz + 1; ctX = bx; ctZ = bz; R = Rs = +QS.get('play'); camD = 5.6 * Math.pow(R / R0, 0.8); startGame(); }   // ?play=радиус&at=x,z — сразу в игру, для проверки
 if (DBGC){ $('title').style.display = 'none';
   // сводка для отладки: сколько чего и хватает ли добычи, если подбирать только часть (доля eat)
   const oct = {}, byB = {}; for (const it of items){ const o = Math.floor(Math.log2(it.s)); oct[o] = (oct[o] || 0) + 1; const b = biomeAt(it.x, it.z) || 'sea'; byB[b] = (byB[b] || 0) + 1; }
