@@ -63,6 +63,11 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 
 /* ——— всплывашки и джойстик ——— */
 #pops{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.isl{display:inline-block;margin:8px 0 0;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:2px 10px;
+  font-weight:700;font-size:clamp(13px,3.4vw,16px);font-variant-numeric:tabular-nums;white-space:nowrap}
+#aim{position:fixed;left:0;top:0;width:52px;height:52px;margin:-26px 0 0 -26px;display:grid;place-items:center;pointer-events:none}
+#aim b{font-size:26px;line-height:1;filter:drop-shadow(0 2px 0 rgba(61,22,56,.6))}
+#aim i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:20px;color:var(--jam);text-shadow:0 0 3px #fff6e6,0 0 3px #fff6e6}
 .pop{position:absolute;left:0;top:0;white-space:nowrap;font-family:var(--ui);font-weight:500;font-size:clamp(14px,3.8vw,19px);color:#fff6e6;opacity:0;
   text-shadow:-1px -1px 0 #3d1638,1px -1px 0 #3d1638,-1px 1px 0 #3d1638,1px 1px 0 #3d1638,0 2px 0 #3d1638,0 3px 4px rgba(61,22,56,.45);will-change:transform,opacity}
 .pop.big{font-weight:700;font-size:clamp(20px,5.6vw,32px);color:var(--lime);
@@ -119,6 +124,7 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
     <div>
       <div class="chip"><b id="size">⌀ 50 см</b><i id="combo"></i></div>
       <div class="next" title="До следующей добычи"><div class="bar"><span id="bar"></span></div><span id="nextIcon"></span></div>
+      <div class="isl" id="isl" title="Сколько острова съедено и сколько идёт прогулка"></div>
     </div>
     <div class="btns">
       <button id="bMute" aria-label="Выключить звук">♪</button>
@@ -126,6 +132,7 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
     </div>
   </div>
   <div id="toast" class="toast" role="status"></div>
+  <div id="aim" hidden><i>➤</i><b></b></div>
   <button id="bBark" class="bark">Гав!<small>пробел</small></button>
 </div>
 <div id="pops" aria-hidden="true"></div>
@@ -704,14 +711,26 @@ for (let i = 0; i < 2; i++){ const g = new T.RingGeometry(.86, 1, 28); g.rotateX
 
 // ————————————————————————————— звук и музыка
 const Snd = (() => {
-  let ctx = null, master, mus, soft, sfx, nbuf, on = false, muted = false, step = 0, nextT = 0, tier = 0, rush = false, iv = null;
-  const f = m => 440 * Math.pow(2, (m - 69) / 12);
-  const PROG = [[36,60,64,67],[33,57,60,64],[41,60,65,69],[43,59,62,67],[36,60,64,67],[33,57,60,64],[41,60,65,69],[43,59,62,67],
-                [41,60,65,69],[43,59,62,67],[40,59,64,67],[33,57,60,64],[41,60,65,69],[43,59,62,67],[36,60,64,67],[36,60,64,67]];
-  const MEL = [[76,79,0,76,72,0,74,76],[0,72,76,0,81,0,79,76],[77,0,77,81,0,77,76,74],[74,0,79,0,0,74,76,77],
-               [79,0,76,79,84,0,79,76],[81,0,79,76,0,72,74,76],[77,0,81,0,84,0,81,77],[79,0,0,74,79,0,83,0],
-               [81,0,81,0,77,0,81,84],[83,0,79,0,74,0,79,0],[79,0,76,0,71,0,76,79],[81,0,0,76,72,0,76,0],
-               [77,77,0,81,0,84,0,81],[79,79,0,83,0,86,0,83],[84,0,79,0,76,0,72,0],[72,0,76,79,84,0,0,0]];
+  let ctx = null, master, mus, soft, drm, sfx, nbuf, on = false, muted = false, step = 0, nextT = 0, tier = 0, pend = 0, rush = false, iv = null;
+  let key = 0, keyTo = 0, move = 1, sparkT = 0, drmV = 1;   // key — сдвиг тональности (подъём на гиганте), move — едет ли Джем (0..1), sparkT — до какого времени звенят «блёстки» комбо
+  const f = m => 440 * Math.pow(2, (m - 69) / 12), fk = m => f(m + key);
+  // Песня из частей: A — куплет (мотив + эхо в паузах), A2 — его повтор с подводкой, B — переход, C — припев с крючком, C2 — повтор припева, D — тихий проигрыш.
+  // Аккорды по буквам: C, a = Am, F, G, e = Em. Мелодия — по 8 восьмых на такт, 0 — пауза.
+  const CH = { C: [36,60,64,67], a: [33,57,60,64], F: [41,60,65,69], G: [43,59,62,67], e: [40,59,64,67] };
+  const SONG = [
+    ['A',  'CaFGCaFG', [[76,0,79,81,79,0,0,0],[76,0,72,74,76,0,0,0],[77,0,81,84,81,0,0,0],[79,0,83,81,79,0,0,0],
+                        [76,0,79,81,79,0,0,0],[76,0,72,74,76,0,79,0],[77,0,81,84,86,0,84,81],[79,0,0,0,74,0,0,0]]],
+    ['A',  'CaFGCaFG', [[76,0,79,81,79,0,0,0],[76,0,72,74,76,0,0,0],[77,0,81,84,81,0,0,0],[79,0,83,81,79,0,0,0],
+                        [76,0,79,81,79,0,0,0],[76,0,72,74,76,0,79,0],[77,0,81,84,86,84,81,0],[79,0,83,0,86,0,0,0]]],
+    ['B',  'FGeaFGFG', [[81,0,0,0,77,0,72,0],[74,0,79,0,83,0,0,0],[79,0,0,0,76,0,71,0],[72,0,76,0,81,0,0,0],
+                        [81,0,84,0,81,0,77,0],[79,0,83,0,86,0,83,0],[84,0,81,0,77,0,81,0],[83,0,86,0,0,0,0,0]]],
+    ['C',  'CGaFCGFG', [[79,0,79,76,0,79,0,84],[83,0,79,0,74,0,79,0],[81,0,81,76,0,81,0,84],[84,0,81,0,77,0,72,0],
+                        [79,0,79,76,0,79,0,84],[86,0,83,0,79,0,83,86],[84,0,81,0,77,0,81,84],[83,0,0,79,83,0,86,0]]],
+    ['C',  'CGaFCGFC', [[79,0,79,76,0,79,0,84],[83,0,79,0,74,0,79,0],[81,0,81,76,0,81,0,84],[84,0,81,0,77,0,72,0],
+                        [79,0,79,76,0,79,0,84],[86,0,83,0,79,0,83,86],[84,0,81,0,77,0,81,84],[84,0,0,0,0,0,0,0]]],
+    ['D',  'CaFG',     [[79,0,79,76,0,0,0,0],[0,0,0,0,0,0,0,0],[81,0,81,77,0,0,0,0],[0,0,0,0,74,76,77,79]]]];
+  const BARS = []; for (const [sec, pr, mel] of SONG) for (let i = 0; i < pr.length; i++) BARS.push({ sec, ch: CH[pr[i]], m: mel[i], last: i === pr.length - 1, first: i === 0 });
+  const NST = BARS.length * 8, melAt = i => { i = (i + NST) % NST; return BARS[i >> 3].m[i & 7]; };
   function init(){
     if (ctx) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     try {
@@ -719,6 +738,7 @@ const Snd = (() => {
       const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
       mus = ctx.createGain(); mus.gain.value = 0.5; mus.connect(master);
       soft = ctx.createBiquadFilter(); soft.type = 'lowpass'; soft.frequency.value = 2600; soft.connect(mus);
+      drm = ctx.createGain(); drm.gain.value = 1; drm.connect(mus);
       sfx = ctx.createGain(); sfx.gain.value = 0.9; sfx.connect(master);
       nbuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = nbuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     } catch (e) { ctx = null; }
@@ -734,33 +754,48 @@ const Snd = (() => {
     const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
   }
+  // «хор»: два чуть расстроенных пилообразных с плавной атакой — долгие ноты на весь такт
+  function pad(fr, t, dur, vol){ for (const dt of [-7, 7]){ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = fr; o.detune.value = dt;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.3); g.gain.setValueAtTime(vol, t + dur - 0.35); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(soft); o.start(t); o.stop(t + dur + 0.05); } }
+  const kick = t => tone(drm, 'sine', 150, t, 0.16, 0.5, 45, 0.12);
   function playStep(i, t0){
-    const bar = i >> 3, st = i & 7, ch = PROG[bar], sd = 60 / bpm() / 2, t = t0 + (st & 1 ? sd * 0.14 : 0);
-    const bp = [0, -1, 12, -1, 0, -1, 12, 7][st];
-    if (bp >= 0){ tone(mus, 'triangle', f(ch[0] + bp), t, 0.2, 0.3); tone(soft, 'square', f(ch[0] + bp), t, 0.12, 0.05); }
-    noise(mus, t, 0.03, st & 1 ? 0.07 : 0.035, 'highpass', 8000);
-    if (tier >= 1){
-      if (st === 0 || st === 4 || (st === 7 && (bar & 3) === 3)) tone(mus, 'sine', 150, t, 0.16, 0.5, 45, 0.12);
-      if (st === 2 || st === 6){ noise(mus, t, 0.11, 0.2, 'bandpass', 1900, 0.8); tone(mus, 'triangle', 190, t, 0.06, 0.12, 120); }
+    const B = BARS[i >> 3], st = i & 7, sd = 60 / bpm() / 2, t = t0 + (st & 1 ? sd * 0.14 : 0), brk = B.sec === 'D', cho = B.sec === 'C';
+    if (st === 0 && B.first) key = keyTo;   // подъём тональности — только с начала части
+    // новый слой входит с начала такта, а перед ним — барабанная сбивка и тарелка
+    if (st === 0 && pend > tier){ tier = pend; noise(mus, t, 1.4, 0.2, 'highpass', 5000); kick(t); }
+    const ch = B.ch, fill = st >= 4 && (pend > tier || (tier >= 1 && B.last && (B.sec === 'B' || brk)));
+    const bp = (brk ? [0, -1, -1, -1, 0, -1, -1, -1] : [0, -1, 12, -1, 0, -1, 12, 7])[st];
+    if (bp >= 0){ tone(mus, 'triangle', fk(ch[0] + bp), t, 0.2, 0.3); tone(soft, 'square', fk(ch[0] + bp), t, 0.12, 0.05); }
+    noise(drm, t, 0.03, st & 1 ? 0.07 : 0.035, 'highpass', 8000);
+    if (fill){ const k = st - 4; if (!k) kick(t); for (let h = 0; h < 2; h++) noise(drm, t + h * sd / 2, 0.08, 0.08 + k * 0.035 + h * 0.015, 'bandpass', 1600 + k * 250, 0.8); }
+    else if (tier >= 1){
+      if (brk){ if (st === 0) kick(t); }
+      else { if (st === 0 || st === 4) kick(t);
+        if (st === 2 || st === 6){ noise(drm, t, 0.11, 0.2, 'bandpass', 1900, 0.8); tone(drm, 'triangle', 190, t, 0.06, 0.12, 120); } }
     }
-    if (tier >= 2 && (st & 1)) for (let k = 1; k < 4; k++) tone(soft, 'square', f(ch[k]), t, 0.09, 0.035);
-    if (tier >= 3) tone(mus, 'sine', f(ch[1 + [0, 1, 2, 1][st & 3]] + 24), t, 0.14, 0.045);
-    const m = MEL[bar][st];
-    if (m){ tone(soft, 'square', f(m), t, 0.24, 0.085); tone(mus, 'sine', f(m), t, 0.2, 0.06); if (tier >= 4) tone(mus, 'triangle', f(m + 12), t, 0.16, 0.05); }
+    if (tier >= 2 && (st & 1) && !brk) for (let k = 1; k < 4; k++) tone(soft, 'square', fk(ch[k]), t, 0.09, 0.035);
+    if (tier >= 3) tone(mus, 'sine', fk(ch[1 + [0, 1, 2, 1][st & 3]] + 24), t, 0.14, 0.045);
+    if (tier >= 5 && st === 0) for (let k = 1; k < 4; k++) pad(fk(ch[k] + 12), t, sd * 8, 0.014);
+    const m = B.m[st];
+    if (m){ tone(soft, 'square', fk(m), t, 0.24, 0.085); tone(mus, 'sine', fk(m), t, 0.2, 0.06); if (tier >= 4 || cho) tone(mus, 'triangle', fk(m + 12), t, 0.16, tier >= 4 ? 0.05 : 0.035); }
+    else { const e = melAt(i - 3); if (e) tone(soft, 'triangle', fk(e), t, 0.18, 0.05); }   // эхо: в паузе повторяем ноту трёх восьмых назад
+    if (t < sparkT && Math.random() < 0.55){ const s = fk(ch[1 + (Math.random() * 3 | 0)] + 36); tone(mus, 'sine', s, t, 0.3, 0.03); tone(mus, 'triangle', s * 2, t, 0.1, 0.012); }
   }
   const bpm = () => rush ? 142 : 120 + tier * 2;
   function sched(){ if (!on || !ctx) return; if (nextT < ctx.currentTime) nextT = ctx.currentTime + 0.05;
-    while (nextT < ctx.currentTime + 0.2){ playStep(step, nextT); nextT += 60 / bpm() / 2; step = (step + 1) % 128; } }
+    drmV += (0.22 + 0.78 * move - drmV) * 0.12; if (Math.abs(drmV - drm.gain.value) > .005) drm.gain.value = drmV;   // стоит Джем — бит притихает (без автоматизации: её события копятся и грузят звук)
+    while (nextT < ctx.currentTime + 0.2){ playStep(step, nextT); nextT += 60 / bpm() / 2; step = (step + 1) % NST; } }
   const ok = () => ctx && ctx.state === 'running';
   return {
     init,
-    start(){ init(); if (!ctx) return; if (ctx.state !== 'running') ctx.resume(); on = true; step = 0; tier = 0; rush = false; nextT = ctx.currentTime + 0.1; if (!iv) iv = setInterval(sched, 50); },
+    start(){ init(); if (!ctx) return; if (ctx.state !== 'running') ctx.resume(); on = true; step = 0; tier = pend = 0; key = keyTo = 0; sparkT = 0; move = 1; rush = false; nextT = ctx.currentTime + 0.1; if (!iv) iv = setInterval(sched, 50); },
     stopMusic(){ on = false; },
     suspend(){ if (ctx && ctx.state === 'running') ctx.suspend(); },
     resume(){ if (ctx && ctx.state !== 'running') ctx.resume(); },
-    setTier(n){ tier = n; }, setRush(v){ rush = v; },
+    setTier(n){ pend = n; if (n >= 6) keyTo = 2; }, setRush(v){ rush = v; }, setMove(v){ move = v; },
     toggleMute(){ muted = !muted; if (ctx) master.gain.setTargetAtTime(muted ? 0 : 0.85, ctx.currentTime, 0.03); return muted; },
-    pop(combo, big){ if (!ok()) return; const t = ctx.currentTime, sc = [72,74,76,79,81,84,86,88,91,93,96], m = sc[Math.min(combo - 1, sc.length - 1)];
+    pop(combo, big){ if (!ok()) return; const t = ctx.currentTime, sc = [72,74,76,79,81,84,86,88,91,93,96], m = sc[Math.min(combo - 1, sc.length - 1)]; if (combo >= 5) sparkT = t + 1.6;
       tone(sfx, 'sine', f(m) * 0.7, t, 0.13, 0.22, f(m), 0.04); tone(sfx, 'triangle', f(m + 12), t + 0.02, 0.08, 0.07);
       if (big){ tone(sfx, 'sine', 120, t, 0.22, 0.4, 50, 0.18); noise(sfx, t, 0.1, 0.15, 'lowpass', 600); } },
     bonk(){ if (!ok()) return; const t = ctx.currentTime; tone(sfx, 'triangle', 150, t, 0.18, 0.4, 60, 0.15); noise(sfx, t, 0.08, 0.25, 'lowpass', 900); },
@@ -807,6 +842,8 @@ function getGeo(t, v){
 // Остров неровный, поделён сеткой улиц на кварталы. У квартала есть район (биом), район решает, что в квартале стоит.
 // Предметы ставятся не «где попало», а по местам: забор по границе участка, фонарь на тротуаре, кружки у мангала.
 let WS = null, rnd = Math.random, seaM = 4, alive = 0;
+// GQ — режим «квартала великанов»: ставим поверх того, что ком и так съест, и без рисунка на земле
+let GQ = null;
 const groundM = [], GD = [[], [], [], [], []], GY = [0.006, 0.01, 0.014, 0.018, 0.022];
 const DECMAT = new T.MeshToonMaterial({ vertexColors: true, gradientMap: grad, depthWrite: false });
 const PATH = 0xe6d3a3, ASPH = 0x8d91a0, PAVE = 0xd3cdbf, SOIL = 0x9a7350, LOT = 0x9a9eab;
@@ -850,24 +887,26 @@ function blockAt(x, z, r, self){ const i0 = Math.floor((x - r) / OC), i1 = Math.
   return false; }
 function occFree(x, z, r){ const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (!l) continue;
-    for (let k = 0; k < l.length; k++){ if (occHit(l[k], x, z, r)) return false; } }
+    for (let k = 0; k < l.length; k++){ const o = l[k], it = o.it;
+      if (it && (it.got || (GQ && it.s * PICK <= R))) continue;   // съеденное не мешает; великанам не мешает и то, что ком и так съест
+      if (GQ && o.skip) continue; if (occHit(o, x, z, r)) return false; } }
   return true; }
 function foot(t, x, z, sc, ry, fn){   // контур предмета кружками: вытянутое — цепочкой, остальное — одним
   if (t.x){ const a = t.d[0] * sc / 2, b = t.d[2] * sc / 2, L = Math.max(a, b), S = Math.min(a, b), n = Math.min(12, Math.max(1, Math.round(L / S))), r = Math.max(S, L / n * .55), c = Math.cos(ry), s = Math.sin(ry);
     for (let k = 0; k < n; k++){ const o = n === 1 ? 0 : (k / (n - 1) * 2 - 1) * (L - r - .07), lx = a >= b ? o : 0, lz = a >= b ? 0 : o; if (!fn(x + lx * c + lz * s, z - lx * s + lz * c, r)) return false; }
     return true; }
-  return fn(x, z, t.q ? Math.max(.35, t.q) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8);
+  return fn(x, z, t.q ? Math.max(.35, t.q) * (GQ ? sc : 1) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8);
 }
 function put(k, x, z, ry, o){
   const t = TY[k]; if (!t) return null; o = o || {};
-  const sc = o.sc || (t.x ? 1 : lerp(t.sc ? t.sc[0] : .88, t.sc ? t.sc[1] : 1.15, rnd()));
+  const sc = (o.sc || (t.x ? 1 : lerp(t.sc ? t.sc[0] : .88, t.sc ? t.sc[1] : 1.15, rnd())));
   if (ry === undefined) ry = rnd() * TAU;
   if (coast(x, z) < seaM + Math.min(.5 * Math.max(t.d[0], t.d[2]) * sc, 30)) return null;
   let e = null;
   if (!t.flat){ if (!o.f && !foot(t, x, z, sc, ry, occFree)) return null;
     // постройки и заборы записываем честным прямоугольником, иначе в углы домов залезает мелочь
     e = t.x ? occAdd(x, z, Math.hypot(t.d[0], t.d[2]) * sc / 2, { c: Math.cos(ry), s: Math.sin(ry), hx: t.d[0] * sc / 2, hz: t.d[2] * sc / 2 })
-            : occAdd(x, z, t.q ? Math.max(.35, t.q) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8); }
+            : occAdd(x, z, t.q ? Math.max(.35, t.q) * (GQ ? sc : 1) : .5 * Math.max(t.d[0], t.d[2]) * sc * .8); }
   const it = addItem(t, o.v !== undefined ? o.v : t.v ? (rnd() * t.v) | 0 : 0, x, z, sc, ry, null, rnd); if (e) e.it = it; if (curSet) curSet.items.push(it);
   return it;
 }
@@ -886,8 +925,8 @@ function fline(F, k, a0, a1, c, gaps, vert){   // ограда по прямой
   for (const g of gaps){ seg(a, g[0] - g[1]); a = Math.max(a, g[0] + g[1]); } seg(a, a1); }
 function ring(F, k, n, u, v, r, face, o){ const a0 = rnd() * TAU; for (let i = 0; i < n; i++){ const a = a0 + i / n * TAU; P(F, k, u + Math.sin(a) * r, v + Math.cos(a) * r, face ? a + (face > 0 ? PI : 0) : undefined, o); } }
 const landRect = (x, z, wx, wz) => coast(x - wx / 2, z - wz / 2) > 6 && coast(x + wx / 2, z - wz / 2) > 6 && coast(x - wx / 2, z + wz / 2) > 6 && coast(x + wx / 2, z + wz / 2) > 6;
-function dRect(L, x, z, wx, wz, col, force){ if (wx > .05 && wz > .05 && (force || landRect(x, z, wx, wz))) GD[L].push(part(new T.PlaneGeometry(wx, wz), col, x, GY[L], z, -H)); }
-function dCirc(L, x, z, r, col){ if (coast(x, z) > r + 6) GD[L].push(part(new T.CircleGeometry(r, r > 4 ? 22 : 10), col, x, GY[L], z, -H)); }
+function dRect(L, x, z, wx, wz, col, force){ if (GQ) return; if (wx > .05 && wz > .05 && (force || landRect(x, z, wx, wz))) GD[L].push(part(new T.PlaneGeometry(wx, wz), col, x, GY[L], z, -H)); }
+function dCirc(L, x, z, r, col){ if (GQ) return; if (coast(x, z) > r + 6) GD[L].push(part(new T.CircleGeometry(r, r > 4 ? 22 : 10), col, x, GY[L], z, -H)); }
 const D = (F, L, u, v, wu, wv, col) => dRect(L, fx(F, u, v), fz(F, u, v), F.q & 1 ? wv : wu, F.q & 1 ? wu : wv, col);
 const DC = (F, L, u, v, r, col) => dCirc(L, fx(F, u, v), fz(F, u, v), r, col);
 
@@ -1120,7 +1159,6 @@ const BIO = {
   shore:  { den: .09, fill: ['shell', 'shell', 'rock', 'rock', 'bush', 'seagull', 'crab', 'boat', 'starfish'] }
 };
 const WILD = ['tree', 'tree', 'bush', 'bush', 'flower', 'flower', 'rock', 'mushroom', 'pine', 'acorn', 'pigeon', 'hare'];
-const FILLBIG = ['hill', 'mountain', 'tower', 'block', 'oak', 'rock'];
 
 // ——— пляж: полоса песка вдоль берега, режем на отрезки и обставляем каждый
 function genBeach(){
@@ -1290,7 +1328,18 @@ function genWorld(seed){
   for (let i = 0; i < 9; i++) GD[3].push(part(new T.PlaneGeometry(0.98, 9), i % 2 ? 0xd9a066 : 0xcf955b, -4 + i, GY[3] + .004, 0, -H));   // веранда, с которой всё начинается
   genBeach(); genRoads(); genScatter(); genLitter(); pickStart(); buildGround();
   UNL.length = 0; for (const t of TYPES) if (t.top > 0) UNL.push(t); UNL.sort((a, b) => a.top - b.top);
+  // исходный остров: по нему считается «съедено %»; самое большое (обычно вулкан) — финальная цель
+  WS.cells = cells; WS.boss = null; WS.m0 = 0; WS.gq = [];
+  for (const c of cells) c.m0 = 0;
+  for (const it of items) if (!it.drv && (!WS.boss || it.s > WS.boss.s)) WS.boss = it;
+  if (WS.boss) WS.boss.boss = 1;
+  for (const it of items){ if (it.drv || it.boss) continue; it.orig = 1; WS.m0 += it.s; const c = cellAt(it.x, it.z); if (c && c.b){ it.cell = c; c.m0 += it.s; } }
+  // остаток считается по ходу (gone/eject), без перебора всего острова: перебор раз в секунду давал рывки
+  WS.left = WS.m0; for (const c of cells) c.m = c.m0;
+  WS.bigs = items.filter(it => it.orig && it.s > 1).sort((a, b) => b.s - a.s); WS.bi = 0;
 }
+// вещь пропала с земли (съедена или убрана) — вычитаем из остатков острова, квартала и квартала великанов
+function gone(it){ if (it.orig){ WS.left -= it.s; if (it.cell) it.cell.m -= it.s; } else if (it.gq) it.gq.m -= it.s; }
 // Мир поделён на участки 32×32 м. Далёкие участки отцеплены от сцены: ни логика, ни рендер их не перебирают.
 // В bkAll — то, что нужно всегда: машины и гиганты, видные издалека.
 const BK = 32, bkMap = new Map(), bkAll = []; let bkAct = [], bkI0 = NaN, bkI1 = 0, bkJ0 = 0, bkJ1 = 0, bkStamp = 0;
@@ -1338,32 +1387,29 @@ function addItem(t, v, x, z, sc, ry, drv, rr){
 // ————————————————————————————— досыпка и уборка
 // Мир и так плотный, поэтому досыпка — страховка: если рядом совсем нечего катать, подкидываем то, что водится в этом районе,
 // не на дорогу и за кадром (позади камеры или сбоку). Заодно убираем мелочь, которую ком перерос и которой уже не видно.
-const FILL_TARGET = 9, FILL_MAX = 1200, FILL_CAP = ISLAND * 0.4;
+const FILL_TARGET = 9, FILL_MAX = 1200, FILL_UP = 25;
 let fillT = 0, fillN = 0;
 function refill(){
   const cut = camD * 0.003;
-  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && !it.holder && !(it.set && !it.set.done) && it.s < cut){ it.got = true; alive--; if (it.set){ it.set.left--; it.set.lost = true; } if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
-  if (R >= FILL_CAP || fillN >= FILL_MAX) return;
-  const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4, big = R >= 25;
+  for (let i = 0; i < items.length; i++){ const it = items[i]; if (!it.got && !it.drv && !it.holder && !(it.set && !it.set.done) && it.s < cut){ it.got = true; alive--; gone(it); if (it.set){ it.set.left--; it.set.lost = true; } if (it.mesh.parent) it.mesh.parent.remove(it.mesh); } }
+  if (R >= FILL_UP || fillN >= FILL_MAX) return;
+  const hi = R / PICK, lo = hi * 0.3, D = camD * 1.9 + 4;
   let near = 0;
   for (let i = 0; i < items.length; i++){ const it = items[i];
     if (it.got || it.drv || it.s > hi || it.s < lo) continue;
     const dx = it.x - bx, dz = it.z - bz; if (dx * dx + dz * dz < D * D) near++; }
   if (near >= FILL_TARGET) return;
   const fits = k => { const t = TY[k]; return t.s * 0.75 <= hi && t.s * 1.2 >= lo; }, b = biomeAt(bx, bz);
-  let pool = (big ? FILLBIG : b ? BIO[b].fill.concat(LIT[b], MID[b]) : WILD).filter(fits); if (!pool.length) pool = (big ? FILLBIG : WILD).filter(fits);
+  let pool = (b ? BIO[b].fill.concat(LIT[b], MID[b]) : WILD).filter(fits); if (!pool.length) pool = WILD.filter(fits);
   if (!pool.length) return;
   for (let k = Math.min(4, FILL_TARGET - near); k > 0; k--){
     const t = TY[pool[(Math.random() * pool.length) | 0]];
-    // у гиганта самое крупное (горы) растёт вместе с комом, иначе расти было бы не из чего
-    const up = R > 40 ? Math.max(1.2, hi * 0.8 / t.s) : 1.2;
-    const sc = clamp(lerp(0.85, up, Math.random()), 0.75, hi * 0.97 / t.s), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
+    const sc = clamp(lerp(0.85, 1.2, Math.random()), 0.75, hi * 0.97 / t.s), cr = 0.5 * Math.max(t.d[0], t.d[2]) * sc * 0.8;
     for (let tr = 0; tr < 12; tr++){
       let x, z;
-      if (big){ const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * Math.max(0, islR(a) - 14 - cr); x = Math.cos(a) * rr; z = Math.sin(a) * rr; }   // гиганту видно весь остров — горы вырастают где придётся
-      else if (Math.random() < .5){ x = bx + (Math.random() * 2 - 1) * camD * 1.3; z = bz + camD * lerp(.66, 1.5, Math.random()) + cr; }
+      if (Math.random() < .5){ x = bx + (Math.random() * 2 - 1) * camD * 1.3; z = bz + camD * lerp(.66, 1.5, Math.random()) + cr; }
       else { x = bx + (Math.random() < .5 ? -1 : 1) * (camD * lerp(1.3, 1.9, Math.random()) + cr); z = bz + camD * lerp(-.2, .7, Math.random()); }
-      if (coast(x, z) < 5 + Math.min(cr, 10) || (!big && roadAt(x, z, cr + .6))) continue;
+      if (coast(x, z) < 5 + Math.min(cr, 10) || roadAt(x, z, cr + .6)) continue;
       let clear = true;
       for (let i = 0; i < items.length && clear; i++){ const o = items[i]; if (o.got) continue;
         const dd = Math.max(o.cr, o.ex, o.ez) + cr + 0.05, ox = o.x - x, oz = o.z - z; if (ox * ox + oz * oz < dd * dd) clear = false; }
@@ -1377,14 +1423,82 @@ function refill(){
   }
 }
 
+// ————————————————————————————— кварталы великанов и финал
+// Раз в секунду смотрим, сколько исходного острова съедено (по сумме размеров вещей) и какие кварталы выедены.
+// Самое крупное на острове (вулкан) — финал:
+// он спит, пока остров не съеден на BOSS_AT. Съел — Джем забирается на вершину кома, время идёт в рекорд.
+// Квартал великанов: выеденный квартал (а на большом размере — блок из 2×2…4×4 кварталов вместе с улицами) плотно,
+// рядами, заставляется вещами своего района, подогнанными под ком: от трети до чуть больше того, что он уже может съесть.
+const GQ_MIN = 6, BOSS_AT = 0.9, BOSS_K = 1;   // BOSS_K — во сколько раз от обычного порога нужен ком проснувшемуся вулкану
+const THEME = {
+  sub: ['house', 'house', 'house', 'tree', 'tree', 'oak', 'garage', 'shed', 'car', 'pool', 'doghouse'],
+  park: ['tree', 'tree', 'oak', 'oak', 'bush', 'fountain', 'statue', 'carousel', 'kiosk', 'pond'],
+  blocks: ['block', 'block', 'block', 'shop', 'tree', 'car', 'bus', 'dumpster', 'garage'],
+  city: ['tower', 'office', 'office', 'office', 'shop', 'kiosk', 'bus', 'truck', 'billboard'],
+  farm: ['barn', 'silo', 'hay', 'hay', 'cow', 'cow', 'tractor', 'mill', 'coop', 'shed'],
+  forest: ['pine', 'pine', 'pine', 'oak', 'rock', 'rock', 'cabin', 'stump', 'deer'] };
+let ballTop = 0, islP = 0, bossOpen = false, surT = 0, gqCur = null, aimIt = null, playT = 0, finT = -1, finX = 0, finZ = 0;
+function survey(){
+  islP = WS.m0 ? clamp(1 - WS.left / WS.m0, 0, 1) : 1;
+  // под конец стрелка ведёт к самому крупному из оставшегося: список исходных вещей по убыванию, пропускаем съеденные
+  let big = null; if (islP >= .8){ const L = WS.bigs; while (WS.bi < L.length && L[WS.bi].got) WS.bi++; big = L[WS.bi]; }
+  aimIt = islP >= .8 && big && big.s * PICK > R * .3 ? big : null;   // под конец стрелка ведёт к самому крупному из оставшегося
+  if (!bossOpen && islP >= BOSS_AT && state === 'play'){ bossOpen = true; const b = WS.boss;
+    if (b){ toast(b.t.e + ' ' + (b.t.k === 'volcano' ? 'Вулкан проснулся! Съешь его — и остров твой' : b.t.n + ' — последний. Съешь — и остров твой')); Snd.fan(); } }
+  if (R >= GQ_MIN && (!gqCur || gqCur.m < gqCur.m0 * .35 || time - gqCur.t0 > 100)) growGiant();
+}
+function growGiant(){
+  const tgt = R / PICK, step = tgt * 1.5, bc = WS.boss ? cellAt(WS.boss.x, WS.boss.z) : null;
+  const eaten = c => c && c.b && c !== bc && (!c.m0 || c.m < c.m0 * .15);
+  const free = (x0, z0, x1, z1) => { for (const g of WS.gq) if (g.m > g.m0 * .3 && x0 < g.x + g.hx && x1 > g.x - g.hx && z0 < g.z + g.hz && z1 > g.z - g.hz) return false; return true; };
+  // сколько кварталов в ряд нужно, чтобы влезло хотя бы 4×4 вещи; не нашлось столько выеденных подряд — берём меньше
+  let best = null, bs = 1e18;
+  for (let n = clamp(Math.ceil(step * 4 / 58), 1, 4); n >= 1 && !best; n--)
+    for (let i = 0; i + n <= WS.nx; i++) for (let j = 0; j + n <= WS.nz; j++){
+      let ok = true; for (let a = 0; a < n && ok; a++) for (let b = 0; b < n && ok; b++) if (!eaten(WS.C[i + a][j + b])) ok = false;
+      if (!ok) continue;
+      const c0 = WS.C[i][j], c1 = WS.C[i + n - 1][j + n - 1];
+      const x0 = n > 1 ? c0.x0 + 3 : c0.in.x0, x1 = n > 1 ? c1.x1 - 3 : c0.in.x1, z0 = n > 1 ? c0.z0 + 3 : c0.in.z0, z1 = n > 1 ? c1.z1 - 3 : c0.in.z1;
+      const dr = Math.hypot(Math.max(0, x0 - bx, bx - x1), Math.max(0, z0 - bz, bz - z1));
+      if (dr < R * 1.3 + 4 || dr >= bs || !free(x0, z0, x1, z1)) continue;   // не на голову кому; из подходящих — ближайший
+      best = { x0, z0, x1, z1, b: c0.b }; bs = dr; }
+  if (!best) return;
+  const { x0, z0, x1, z1 } = best, G = { x: (x0 + x1) / 2, z: (z0 + z1) / 2, hx: (x1 - x0) / 2, hz: (z1 - z0) / 2, m0: 0, m: 0, t0: time };
+  const tops = TYPES.map(t => t.top), n0 = items.length, L = THEME[best.b] || THEME.sub;
+  const nu = Math.max(1, Math.round((x1 - x0) / step)), nv = Math.max(1, Math.round((z1 - z0) / step)), su = (x1 - x0) / nu, sv = (z1 - z0) / nv, cs = Math.min(su, sv);
+  GQ = true; seaM = 4;
+  try { for (let a = 0; a < nu; a++) for (let b = 0; b < nv; b++){ const cx = x0 + (a + .5) * su, cz = z0 + (b + .5) * sv;
+    for (let tr = 0; tr < 3; tr++){ const t = TY[L[(Math.random() * L.length) | 0]];
+      let sc = tgt * lerp(.35, 1.15, Math.random()) * (1 - tr * .25) / t.s; const fw = Math.max(t.d[0], t.d[2]) * sc; if (fw > cs * .92) sc *= cs * .92 / fw;   // каждая вещь — в свою клетку ряда
+      const j = Math.max(0, cs - Math.max(t.d[0], t.d[2]) * sc) * .4, ry = t.al ? Math.random() * TAU : ((Math.random() * 4) | 0) * H;
+      if (put(t.k, cx + (Math.random() - .5) * j, cz + (Math.random() - .5) * j, ry, { sc })) break; } } }
+  finally { GQ = null; }
+  TYPES.forEach((t, i) => t.top = tops[i]);   // великаны не сдвигают «следующую добычу»
+  if (items.length === n0) return;
+  const mx = Math.max(G.hx, G.hz);
+  for (let i = n0; i < items.length; i++){ const it = items[i]; it.gq = G; G.m0 += it.s;
+    it.grow = -1 - Math.hypot(it.x - G.x, it.z - G.z) / mx * 4; it.mesh.scale.setScalar(.001); }   // вырастают волной от середины
+  G.m = G.m0; WS.gq.push(G); gqCur = G; shake = Math.min(1, shake + .5);
+  toast('🏘️ Вырос квартал великанов!'); Snd.fan();
+}
+// куда показывает стрелка у края экрана
+function aimTarget(){
+  const b = WS.boss; if (bossOpen && b && !b.got) return [b.x, b.z, b.t.e];
+  if (gqCur && time - gqCur.t0 < 25 && gqCur.m > gqCur.m0 * .5) return [gqCur.x, gqCur.z, '🏘️'];
+  if (aimIt && !aimIt.got) return [aimIt.x, aimIt.z, aimIt.t.e];
+  return null;
+}
+const mmss = s => { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
 function resetGame(fresh){   // fresh — новый остров даже при ?seed в адресе
   genWorld(!fresh && QS.get('seed') ? +QS.get('seed') : (Math.random() * 1e9) | 0); fillerReset();
   R = Rs = R0; bx = WS.sx; bz = WS.sz; vx = vz = 0; dogX = bx + .6; dogZ = bz + .15; ctX = bx; ctZ = bz; trailLX = bx; trailLZ = bz; count = 0; combo = 0; boostT = 0; lastKnock = -9; setsDone = 0; thiefNow = null; thiefT = 0; fillT = 2; fillN = 0; lastPick = lastPop = lastBonk = lastWarn = -9; hitstop = shake = ballPop = flash = 0;
   ballG.quaternion.set(0, 0, 0, 1); tierN = 0; stats = {}; toastQ = []; toastT = 0; endT = 0; jumpY = jumpV = 0;
+  islP = 0; bossOpen = false; surT = 0; gqCur = null; aimIt = null; playT = 0; finT = -1;
   camYaw = ((camYaw + PI) % TAU + TAU) % TAU - PI;
   unlockI = 0; while (unlockI < UNL.length && UNL[unlockI].top * PICK <= R) unlockI++;
   for (const p of trailP) p.t = -99;
-  ui.size = ui.combo = ui.icon = '';
+  ui.size = ui.combo = ui.icon = ui.isl = ui.aim = '';
 }
 
 // ————————————————————————————— интерфейс
@@ -1409,10 +1523,18 @@ function updHud(){
   const pr = nx ? clamp((R - prev) / Math.max(1e-6, nx.top * PICK - prev), 0, 1) : 1;
   $('bar').style.width = (pr * 100).toFixed(1) + '%';
   const ic = nx ? nx.e : '👑'; if (ic !== ui.icon){ ui.icon = ic; $('nextIcon').textContent = ic; }
+  const il = '🏝️ ' + Math.floor(islP * 100) + '% · ⏱ ' + mmss(playT); if (il !== ui.isl){ ui.isl = il; $('isl').textContent = il; }
+  // стрелка у края экрана: к вулкану, к новому кварталу великанов или к самому крупному из оставшегося
+  const tg = state === 'play' ? aimTarget() : null, el = $('aim'); let show = false;
+  if (tg){ _v.set(tg[0], 0, tg[1]).project(camera); let sx = _v.x, sy = _v.y; const back = _v.z > 1; if (back){ sx = -sx; sy = -sy; }
+    if (back || Math.abs(sx) > .92 || Math.abs(sy) > .9){ show = true; const k = Math.min(.86 / (Math.abs(sx) || 1e-6), .8 / (Math.abs(sy) || 1e-6)), px = (sx * k * .5 + .5) * W, py = (-sy * k * .5 + .5) * Hh, a = Math.atan2(-sy, sx);
+      el.style.transform = 'translate(' + px.toFixed(0) + 'px,' + py.toFixed(0) + 'px)'; el.firstChild.style.transform = 'rotate(' + a.toFixed(2) + 'rad) translateX(30px)';
+      if (tg[2] !== ui.aim){ ui.aim = tg[2]; el.lastChild.textContent = tg[2]; } } }
+  if (show === el.hidden) el.hidden = !show;
 }
-let best = 0;
-try { best = parseFloat(localStorage.getItem('jem-best')) || 0; } catch (e) { best = 0; }
-function showBest(){ if (best > 0){ $('best').hidden = false; $('best').textContent = 'Рекорд: ⌀ ' + fmt(best); } }
+let best = 0, bestT = 0;   // самый большой ком и самое быстрое прохождение острова, сек
+try { best = parseFloat(localStorage.getItem('jem-best')) || 0; bestT = parseFloat(localStorage.getItem('jem-time')) || 0; } catch (e) { best = 0; }
+function showBest(){ if (best > 0 || bestT > 0){ $('best').hidden = false; $('best').textContent = (bestT ? 'Рекорд: остров за ' + mmss(bestT) + ' · ' : 'Рекорд: ') + 'ком ⌀ ' + fmt(best); } }
 showBest();
 
 // ————————————————————————————— подбор и столкновения
@@ -1420,7 +1542,7 @@ const _t = new T.Vector3(), _ax = new T.Vector3(), _q = new T.Quaternion();
 function pickup(it){
   if (it.held){ const h = it.held; it.held = null; h.holder = null; h.np = 0; pickup(h); }   // кот с добычей — забираем и добычу
   if (it.mesh.userData.wg) for (const w of it.mesh.userData.wg) w.visible = false;
-  it.got = true; count++; alive--; it.mesh.material = MAT; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
+  it.got = true; count++; alive--; gone(it); it.mesh.material = MAT; it.mesh.matrixAutoUpdate = true; it.mesh.position.set(it.x, it.y, it.z);
   const r0 = Math.pow(R, GP); R = Math.pow(r0 + GROW * Math.pow(it.s * feed(it.s), GP), 1 / GP); it.gain = Math.pow(R, GP) - r0;   // gain — чтобы честно отнять, если вещь выбьют
   const dx = it.x - bx, dz = it.z - bz, dy = it.y - R, l = Math.hypot(dx, dy, dz) || 1, rr = R * 0.8;
   _t.set(bx + dx / l * rr, R + dy / l * rr, bz + dz / l * rr);
@@ -1461,6 +1583,7 @@ function eject(a, x, z){
   if (coast(x, z) < 2){ x *= .97; z *= .97; }
   toAll = true; const it = addItem(a.t, a.v || 0, x, z, a.sc, Math.random() * TAU, null, Math.random); toAll = false;
   it.grow = 0; it.mesh.scale.setScalar(0.001); it.np = time + 1; it.set = a.set;
+  it.orig = a.orig; it.cell = a.cell; it.gq = a.gq; if (it.orig){ WS.left += it.s; if (it.cell) it.cell.m += it.s; } else if (it.gq) it.gq.m += it.s;   // вернулась на землю — снова в остатке
   return it;
 }
 // самые свежие (наружные) вещи кома, которые можно отнять: не крупнее max
@@ -1505,8 +1628,11 @@ function bonk(it){
   Snd.bonk(); shake = Math.min(1, shake + 0.6); hitstop = 0.06; it.wob = 0.22;
   if (it.drv && time - lastHonk > 1){ lastHonk = time; Snd.voice('honk'); }
   for (let i = 0; i < 6; i++){ const a = Math.random() * TAU; spawnP(bx + (it.x - bx) * .6, R * .6, bz + (it.z - bz) * .6, Math.cos(a) * R * 2, R * 3 * Math.random(), Math.sin(a) * R * 2, .4, R * .07, 0xf2e6c4, R * 6); }
-  if (time - lastWarn > 1.6){ lastWarn = time; popup('Рано! Нужен ком ⌀ ' + fmt(it.s * PICK), it.x, it.y + it.s * 1.2, it.z, false); }
+  if (time - lastWarn > 1.6){ lastWarn = time;
+    const need = it.s * PICK * (it.boss ? BOSS_K : 1);
+    popup(it.boss && !bossOpen ? it.t.n + ' спит: сначала съешь остров на ' + Math.round(BOSS_AT * 100) + '%' : 'Рано! Нужен ком ⌀ ' + fmt(need), it.x, it.y + it.s * 1.2, it.z, false); }
 }
+const _fd = new T.Vector3();
 function updItems(dt){
   const play = state === 'play', cullR = state === 'title' ? 70 : camD * 3.4 + 12, minS = camD * 0.005, shS = camD * 0.03;
   bkActivate(DBGC ? 1e5 : cullR + 24);   // запас: крупные вещи и разбежавшиеся звери могут стоять за границей своего участка
@@ -1517,7 +1643,7 @@ function updItems(dt){
     if (it.holder){ const h = it.holder, a = h.mesh.rotation.y, f = h.t.d[2] * h.sc * .5; it.x = h.x + Math.sin(a) * f; it.z = h.z + Math.cos(a) * f; }   // в зубах у кота
     let dx = it.x - bx, dz = it.z - bz, dist = Math.sqrt(dx * dx + dz * dz);
     if (!d && !it.holder && !DBGC && dist - it.cr > cullR){ if (m.visible) m.visible = false; continue; }   // далёкое и неподвижное — сразу мимо
-    const can = R >= it.s * PICK; let hop = it.holder ? it.holder.y * 1.1 : 0;
+    const can = it.boss ? bossOpen && R >= it.s * PICK * BOSS_K : R >= it.s * PICK; let hop = it.holder ? it.holder.y * 1.1 : 0;
     if (d){
       // машина ездит по своей улице туда-обратно, держась правой полосы
       const blocked = !can && dist < R + it.cr + 3;
@@ -1590,7 +1716,9 @@ function updItems(dt){
   for (let i = 0; i < attached.length; i++){ const a = attached[i]; let s = 1;
     if (a.pop > 0){ a.pop = Math.max(0, a.pop - dt * 3.2); s += Math.sin(a.pop * PI) * 0.45 * a.pop; }
     if (a.t.al && !a.t.al.calm) s *= 1 + Math.sin(time * 15 + a.ph) * 0.07;
-    a.mesh.scale.setScalar(a.bs * s); a.mesh.castShadow = a.s > R * 0.12;
+    // финал: макушку кома утрамбовываем, чтобы Джема не заслонял съеденный дом
+    if (finT >= 0 && a.dir){ const wy = _fd.copy(a.dir).applyQuaternion(ballG.quaternion).y; s *= 1 - smooth(clamp(finT / .8, 0, 1)) * clamp((wy + .1) / .5, 0, 1); }
+    a.mesh.scale.setScalar(Math.max(.001, a.bs * s)); a.mesh.castShadow = a.s > R * 0.12;
     // насколько торчит: крупное относительно кома — целиком снаружи, мелкое плавно уходит внутрь
     if (a.dir){ const o = smooth(clamp((a.s / R - SINK0) / (SINK1 - SINK0), 0, 1)); a.mesh.position.copy(a.dir).multiplyScalar(R * .8 + a.s * (o * .9 - .55)); } }
 }
@@ -1652,17 +1780,21 @@ function setPause(p){
 }
 function quitWalk(){ if (state !== 'pause') return; $('pause').hidden = true; Snd.resume(); last = performance.now(); endGame(); }
 function again(){ if (state !== 'end') return; $('end').hidden = true; resetGame(); state = 'play'; $('hud').hidden = false; Snd.start(); canvas.focus(); }
-function endGame(){
+function endGame(fin){
   state = 'end'; endT = 0; joy.on = false; joyEl.classList.remove('on'); Snd.stopMusic(); Snd.end(); confetti(60, Math.pow(R / R0, .8)); jumpV = 3.2;
-  const d = R * 2, all = alive <= 0, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : d < 60 ? 'Джемзилла' : d < 200 ? 'Гроза острова' : 'Пёс размером с остров';
+  finT = fin ? 0 : -1; finX = dogX; finZ = dogZ;   // финал: Джем запрыгивает на вершину кома
+  const d = R * 2, all = !!fin, rank = all ? 'Пёс, который скатал всё' : d < 1 ? 'Щенок с носком' : d < 3 ? 'Гроза тапок' : d < 8 ? 'Повелитель мебели' : d < 18 ? 'Ужас всего района' : d < 60 ? 'Джемзилла' : d < 200 ? 'Гроза острова' : 'Пёс размером с остров';
   $('endSize').textContent = '⌀ ' + fmt(R); $('rank').textContent = 'Звание: ' + rank;
   $('endCount').textContent = 'В коме ' + count + ' ' + plural(count, 'вещь', 'вещи', 'вещей') + '.' + (setsDone ? ' Комплектов целиком: ' + setsDone + '.' : '');
   const ul = $('haul'); ul.textContent = '';
   Object.keys(stats).sort((a, b) => stats[b].n - stats[a].n).slice(0, 8).forEach(n => { const li = document.createElement('li'); li.textContent = stats[n].e + ' ' + n + ' ×' + stats[n].n; ul.appendChild(li); });
-  const nx = UNL[unlockI]; $('end').querySelector('h2').textContent = all ? 'На острове больше ничего нет' : 'Прогулка окончена';
-  $('endHint').textContent = all ? 'Скатано всё до последнего носка.' : nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.top * PICK) + '.' : 'Джему по зубам было вообще всё.';
+  const nx = UNL[unlockI]; $('end').querySelector('h2').textContent = all ? 'Остров съеден!' : 'Прогулка окончена';
+  $('endHint').textContent = all ? 'Джем на вершине кома. Время: ' + mmss(playT) + '.'
+    : 'Остров съеден на ' + Math.floor(islP * 100) + '% за ' + mmss(playT) + '. ' + (nx ? 'Не по зубам осталось: ' + nx.e + ' ' + nx.n + ' — нужен ком ⌀ ' + fmt(nx.top * PICK) + '.' : '');
   const rec = R > best; if (rec){ best = R; try { localStorage.setItem('jem-best', String(R)); } catch (e) {} }
-  $('endBest').textContent = rec ? 'Это новый рекорд!' : 'Рекорд: ⌀ ' + fmt(best);
+  const recT = all && (!bestT || playT < bestT); if (recT){ bestT = playT; try { localStorage.setItem('jem-time', String(playT)); } catch (e) {} }
+  $('endBest').textContent = recT ? 'Новый рекорд: остров за ' + mmss(playT) + '!' : (bestT ? 'Рекорд: остров за ' + mmss(bestT) + '. ' : '') + (rec ? 'Самый большой ком!' : 'Самый большой ком: ⌀ ' + fmt(best));
+  showBest();
 }
 function plural(n, a, b, c){ const m = n % 100, k = n % 10; return m > 10 && m < 20 ? c : k === 1 ? a : k > 1 && k < 5 ? b : c; }
 $('bStart').addEventListener('click', startGame);
@@ -1692,17 +1824,21 @@ function update(dt, raw){
   vx += (ix * vm - vx) * a; vz += (-iy * vm - vz) * a;
   const ox = bx, oz = bz; bx += vx * dt; bz += vz * dt;
   const br = Math.hypot(bx, bz), lim = islR(Math.atan2(bz, bx)) + 5 - R * 0.5; if (br > lim){ bx *= lim / br; bz *= lim / br; }
-  const prog = count / Math.max(1, count + alive);
-  if (play) Snd.setRush(prog >= 0.9);
+  if (play){ playT += raw; surT -= dt; if (surT <= 0){ surT = 1; survey(); }
+    const b = WS.boss; if (bossOpen && b && !b.got && Math.random() < dt * 8)   // проснувшийся вулкан дымит
+      spawnP(b.x + (Math.random() - .5) * b.s * .3, b.y * 2, b.z + (Math.random() - .5) * b.s * .3, (Math.random() - .5) * b.s * .05, b.s * (.12 + Math.random() * .08), (Math.random() - .5) * b.s * .05, 3, b.s * (.06 + Math.random() * .05), 0x8a8580, 0); }
+  if (play){ Snd.setRush(bossOpen); Snd.setMove(clamp(Math.hypot(vx, vz) / vm * 1.6, 0, 1)); }
   if (play){ fillT -= dt; if (fillT <= 0){ fillT = 0.8; refill(); } }
-  if (state === 'play' && count && alive <= 0) endGame();
+  if (state === 'play' && (WS.boss ? WS.boss.got : islP >= .995)) endGame(true);
+  else if (state === 'play' && count && alive <= 0) endGame(true);
   updItems(dt);
   // катим
   const mx = bx - ox, mz = bz - oz, md = Math.hypot(mx, mz);
   if (md > 1e-6){ _ax.set(mz / md, 0, -mx / md); _q.setFromAxisAngle(_ax, md / R); ballG.quaternion.premultiply(_q); }
   ballPop *= Math.exp(-9 * dt);
   const nAtt = attached.length, cf = lerp(1, 0.72, Math.min(1, nAtt / 14));
-  const ff = fillF(); core.scale.setScalar(R * cf * (1 - .06 * ff)); updFiller(R * cf, ff); ballG.position.set(bx, R, bz); ballG.scale.setScalar(1 + ballPop * Math.sin(time * 40) * .5 + ballPop * .5);
+  const ff = fillF(); ballTop = R + R * cf * Math.max(1 - .06 * ff, .97 + .1 * ff) - R * .03;   // видимая макушка кома: ядро и утрамбовка, без торчащих вещей
+  core.scale.setScalar(R * cf * (1 - .06 * ff)); updFiller(R * cf, ff); ballG.position.set(bx, R, bz); ballG.scale.setScalar(1 + ballPop * Math.sin(time * 40) * .5 + ballPop * .5);
   // Джем
   const sp = Math.hypot(vx, vz); spN += (clamp(sp / vm, 0, 1) - spN) * Math.min(1, dt * 8);
   const ds = 0.78 * Math.pow(R / R0, 0.55);
@@ -1715,7 +1851,11 @@ function update(dt, raw){
   }
   const dk = 1 - Math.exp(-14 * dt); dogX += (tx - dogX) * dk; dogZ += (tz - dogZ) * dk;
   jumpV -= 14 * dt; jumpY += jumpV * dt; if (jumpY < 0){ jumpY = 0; jumpV = state === 'end' ? 2.6 : 0; }
-  jem.position.set(dogX, jumpY * ds, dogZ); jem.rotation.y = ha; jem.scale.setScalar(ds); outlineMat.uniforms.th.value = 0.013 * ds;
+  jem.position.set(dogX, jumpY * ds, dogZ);
+  if (finT >= 0){ finT += dt; const p = clamp(finT / 1.1, 0, 1), e = smooth(p);   // прыжок дугой на макушку кома, там — подскоки от радости
+    jem.position.set(lerp(finX, bx, e), ballTop * e + Math.sin(p * PI) * R * .8 + (p >= 1 ? jumpY * Math.max(ds, R * .5) * .45 : 0), lerp(finZ, bz, e));
+    ha = lerpAngle(ha, Math.atan2(camera.position.x - bx, camera.position.z - bz), Math.min(1, dt * 4)); }
+  jem.rotation.y = ha; const jds = finT >= 0 ? lerp(ds, Math.max(ds, R * .5), smooth(clamp(finT / 1.1, 0, 1))) : ds; jem.scale.setScalar(jds); outlineMat.uniforms.th.value = 0.013 * jds;
   runPh += dt * (6 + spN * 16) * (spN > 0.05 ? 1 : 0);
   const sw = Math.sin(runPh) * 0.95 * Math.min(1, spN * 2);
   J.legs[0].rotation.x = sw; J.legs[3].rotation.x = sw; J.legs[1].rotation.x = -sw; J.legs[2].rotation.x = -sw;
@@ -1759,7 +1899,7 @@ function update(dt, raw){
   // подсказки «теперь по зубам»
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   else if (toastQ.length && play){ const q = toastQ.splice(0, 3); toastQ.length = 0; toast('Теперь по зубам: ' + q.map(t => t.e + ' ' + t.n).join(', ')); }
-  if (state === 'end'){ endT += raw; if (endT > 1.5 && $('end').hidden){ $('end').hidden = false; $('hud').hidden = true; $('bAgain').focus(); } if (Math.random() < dt * 5) confetti(3, Math.pow(R / R0, .8)); }
+  if (state === 'end'){ endT += raw; if (endT > (finT >= 0 ? 4 : 1.5) && $('end').hidden){ $('end').hidden = false; $('hud').hidden = true; $('bAgain').focus(); } if (Math.random() < dt * 5) confetti(3, Math.pow(R / R0, .8)); }
   updCamera(dt);
   updHud();
 }
@@ -1769,7 +1909,7 @@ function updCamera(dt){
   const portrait = W < Hh;
   let dT = 5.6 * Math.pow(Rs / R0, 0.8) * (portrait ? 1.3 : 1), pT = 0.84, k = 1 - Math.exp(-3 * dt);
   if (state === 'title'){ dT = portrait ? 5 : 3.5; pT = 0.26; camYaw += (0.55 + Math.sin(time * 0.3) * 0.35 - camYaw) * k; }
-  else if (state === 'end'){ dT *= 1.2; pT = 0.5; camYaw += dt * 0.3; }
+  else if (state === 'end'){ dT *= finT >= 0 ? .8 : 1.2; pT = finT >= 0 ? .42 : 0.5; camYaw += dt * 0.3; }
   else camYaw += (0 - camYaw) * k;
   camD += (dT - camD) * k; camP += (pT - camP) * k;
   const lead = state === 'play' ? 0.22 : 0, kk = 1 - Math.exp(-6 * dt);
@@ -1785,7 +1925,7 @@ function updCamera(dt){
   camera.near = camD * 0.05; camera.far = Math.max(2600, camD * 16); camera.updateProjectionMatrix();
   sky.position.copy(camera.position); sky.scale.setScalar(camera.far * 0.9);
   // время суток: чем меньше осталось на острове, тем ближе закат
-  const td = clamp(count / Math.max(1, count + alive), 0, 1);
+  const td = islP;
   if (DBGC && state === 'title'){ const p = DBGC[3] || 1.2; camD = DBGC[2]; ctX = DBGC[0]; ctZ = DBGC[1]; camera.position.set(ctX, Math.sin(p) * camD, ctZ + Math.cos(p) * camD); camera.lookAt(ctX, 0, ctZ);
     camera.near = camD * 0.05; camera.updateProjectionMatrix(); sky.position.copy(camera.position); }
   dayCol(DAY.sun, td, sun.color); dayCol(DAY.sky, td, hemi.color); dayCol(DAY.gnd, td, hemi.groundColor);
