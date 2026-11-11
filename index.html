@@ -100,6 +100,21 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 .go-row .go{margin-top:0}
 .go.alt{background:var(--cream);font-size:clamp(15px,4vw,19px);padding:10px 18px 11px}
 #best{margin-top:14px;font-weight:700}
+/* телефон стоя: заголовок наверху, Джем посередине, текст — внизу на плашке, чтобы читался на любом фоне */
+@media (max-aspect-ratio:4/5){
+  #title{background:linear-gradient(to top,rgba(61,22,56,.35) 0%,rgba(61,22,56,0) 45%)}
+  #title > :first-child{margin-top:0}
+  #title h1{font-size:clamp(36px,11vw,58px);margin:0 0 auto}
+  #title h1 br:first-of-type{display:none}
+  .tpanel{width:100%;background:rgba(43,15,40,.76);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:2px solid rgba(255,246,230,.16);border-radius:22px;padding:14px 16px 16px}
+  #title .tpanel p,#title .tips li{text-shadow:none}
+  #title .tpanel > p:first-child{font-weight:700}
+  .tpanel .go-row{flex-wrap:nowrap;gap:10px;margin-top:14px}
+  .tpanel .go-row > *{flex:1 1 auto;min-width:0}
+  .tpanel .go{font-size:22px;padding:10px 16px 12px;border-radius:18px}
+  .tpanel .go.alt{font-size:15px;padding:10px 8px 11px;white-space:nowrap}
+  #best{margin-top:10px;font-size:14px}
+}
 .center{align-items:center;justify-content:center;background:rgba(61,22,56,.45)}
 .card{background:var(--panel);color:var(--ink);border:4px solid var(--line);border-radius:28px;box-shadow:0 8px 0 var(--line);
   padding:22px 26px 26px;width:min(92vw,440px);text-align:center;max-height:100%;overflow:auto}
@@ -139,18 +154,19 @@ button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 <div id="joy" aria-hidden="true"><i></i></div>
 
 <section id="title" class="screen">
-  <h1>Джем<br>катит<br>всё</h1>
-  <p>Один пёс и всё, что плохо лежит. Начни с носков — закончи домами.</p>
-  <p class="how">С телефона — веди пальцем по экрану.<br>С компьютера — WASD или стрелки, пробел — гав.</p>
-  <ul class="tips">
-    <li>🧺 <b>Комплекты.</b> Съешь сценку целиком — пикник, будку, грядку — и получишь разгон. Сколько осталось, видно в подписи к вещи.</li>
-    <li>📣 <b>Гав!</b> пугает прохожих: почтальон, курьер, бабушка роняют то, что несли.</li>
-    <li>🐈 <b>Коты и собаки</b> крадут вещи из кома и убегают. Догони вора или гавкни — бросит. Когда дорастёшь, их можно съесть.</li>
-  </ul>
-  <div class="go-row"><button id="bStart" class="go">Гулять</button><button id="bReroll" class="go alt">🎲 Сброс локации</button></div>
-  <p id="best" hidden></p>
+  <h1>Джем <br>катит<br>всё</h1>
+  <div class="tpanel">
+    <p>Начни с носков — закончи вулканом. Рекорд — на скорость.</p>
+    <p class="how" id="how">WASD или стрелки — катить, пробел — гав.</p>
+    <ul class="tips">
+      <li>🧺 <b>Комплекты:</b> съешь сценку целиком — получишь разгон.</li>
+      <li>📣 <b>Гав!</b> — прохожие роняют то, что несли.</li>
+      <li>🐈 <b>Коты и собаки</b> крадут из кома. Догони или гавкни.</li>
+    </ul>
+    <div class="go-row"><button id="bStart" class="go">Гулять</button><button id="bReroll" class="go alt">🎲 Сброс локации</button></div>
+    <p id="best" hidden></p>
+  </div>
 </section>
-
 <section id="pause" class="screen center" hidden>
   <div class="card">
     <h2>Пауза</h2>
@@ -1266,13 +1282,18 @@ function genLitter(){
     if (rnd() < .33) clump(px, pz, 1, 1, 5, MID[b]); }
   seaM = 4;
 }
-// старт: случайный биом, случайное свободное место, вокруг — мелочь этого биома, чтобы маленькому кому было с чего начать
+// старт: случайный биом, случайное свободное место, вокруг — мелочь этого биома, чтобы маленькому кому было с чего начать.
+// Биомы старта идут «мешком»: пока не побывал во всех, уже виденные не выпадают; тот же биом два раза подряд — никогда.
+const START_B = ['sub', 'park', 'blocks', 'city', 'farm', 'forest', 'beach']; let startSeen = [];
 function pickStart(){
   WS.sx = WS.sz = 0; WS.sb = 'sub';
-  find: for (const b of shuffle(['sub', 'park', 'blocks', 'city', 'farm', 'forest', 'beach'])) for (let tr = 0; tr < 500; tr++){
+  if (startSeen.length >= START_B.length) startSeen = startSeen.slice(-1);
+  const last = startSeen[startSeen.length - 1], order = shuffle(START_B.slice()).sort((p, q) => (startSeen.includes(p) ? 1 : 0) - (startSeen.includes(q) ? 1 : 0)).filter(b => b !== last);
+  find: for (const b of order) for (let tr = 0; tr < 500; tr++){
     const a = rnd() * TAU, rr = Math.sqrt(rnd()) * islR(a), x = Math.cos(a) * rr, z = Math.sin(a) * rr, cl = cellAt(x, z);
     if ((biomeAt(x, z) === 'beach' ? 'beach' : cl && cl.b) !== b || coast(x, z) < 12 || roadAt(x, z, 3) || !occFree(x, z, 3)) continue;
     WS.sx = x; WS.sz = z; WS.sb = b; break find; }
+  startSeen.push(WS.sb);
   occAdd(WS.sx, WS.sz, 1.4).skip = 1;
   const keys = BIO[WS.sb].fill.concat(['bone', 'tball', 'sock', 'cookie', 'cup', 'boot', 'bucket', 'football']), tiny = keys.filter(k => TY[k].s * PICK <= R0), mid = keys.filter(k => TY[k].s * PICK > R0 && TY[k].s < .5);
   const sow = (L, n, r0, r1) => { for (let i = 0; i < n && L.length; i++) for (let tr = 0; tr < 5; tr++){ const a = rnd() * TAU, r = lerp(r0, r1, Math.sqrt(rnd())), x = WS.sx + Math.cos(a) * r, z = WS.sz + Math.sin(a) * r;
@@ -1537,6 +1558,7 @@ let best = 0, bestT = 0;   // самый большой ком и самое б�
 try { best = parseFloat(localStorage.getItem('jem-best')) || 0; bestT = parseFloat(localStorage.getItem('jem-time')) || 0; } catch (e) { best = 0; }
 function showBest(){ if (best > 0 || bestT > 0){ $('best').hidden = false; $('best').textContent = (bestT ? 'Рекорд: остров за ' + mmss(bestT) + ' · ' : 'Рекорд: ') + 'ком ⌀ ' + fmt(best); } }
 showBest();
+if (TOUCH) $('how').textContent = 'Веди пальцем по экрану, «Гав!» — кнопка внизу.';
 
 // ————————————————————————————— подбор и столкновения
 const _t = new T.Vector3(), _ax = new T.Vector3(), _q = new T.Quaternion();
@@ -1913,7 +1935,7 @@ function updCamera(dt){
   Rs += (R - Rs) * (1 - Math.exp(-2.5 * dt));
   const portrait = W < Hh;
   let dT = 5.6 * Math.pow(Rs / R0, 0.8) * (portrait ? 1.3 : 1), pT = 0.84, k = 1 - Math.exp(-3 * dt);
-  if (state === 'title'){ dT = portrait ? 5 : 3.5; pT = 0.26; camYaw += (0.55 + Math.sin(time * 0.3) * 0.35 - camYaw) * k; }
+  if (state === 'title'){ dT = portrait ? 3.9 : 3.5; pT = 0.26; camYaw += (0.55 + Math.sin(time * 0.3) * 0.35 - camYaw) * k; }
   else if (state === 'end'){ dT *= finT >= 0 ? .8 : 1.2; pT = finT >= 0 ? .42 : 0.5; camYaw += dt * 0.3; }
   else camYaw += (0 - camYaw) * k;
   camD += (dT - camD) * k; camP += (pT - camP) * k;
@@ -1922,7 +1944,7 @@ function updCamera(dt){
   const fx = ttl ? bx + (portrait ? 0.32 : -0.35) : bx + vx * lead, fz = ttl ? bz + (portrait ? 0.05 : 0.45) : bz + vz * lead;
   ctX += (fx - ctX) * kk; ctZ += (fz - ctZ) * kk;
   shake *= Math.exp(-7 * dt); const sh = (RM ? 0.15 : 1) * shake * camD * 0.02;
-  const cyT = ttl ? (portrait ? -0.75 : 0.2) : Rs * 0.9; camY += (cyT - camY) * kk; const cy = camY, cp = Math.cos(camP);
+  const cyT = ttl ? (portrait ? -0.35 : 0.2) : Rs * 0.9; camY += (cyT - camY) * kk; const cy = camY, cp = Math.cos(camP);
   camera.position.set(ctX + Math.sin(camYaw) * cp * camD + (Math.random() - .5) * sh, cy + Math.sin(camP) * camD + (Math.random() - .5) * sh, ctZ + Math.cos(camYaw) * cp * camD);
   camera.lookAt(ctX, cy, ctZ);
   fovK += (spN - fovK) * Math.min(1, dt * 3);
