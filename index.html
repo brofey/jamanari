@@ -881,9 +881,10 @@ function occHit(o, x, z, r){ const dx = x - o.x, dz = z - o.z, rr = r + .03;
   if (o.rc){ const lx = Math.abs(dx * o.rc.c - dz * o.rc.s) - o.rc.hx, lz = Math.abs(dx * o.rc.s + dz * o.rc.c) - o.rc.hz, ex = lx > 0 ? lx : 0, ez = lz > 0 ? lz : 0; return ex * ex + ez * ez < rr * rr; }
   const dd = rr + o.r; return dx * dx + dz * dz < dd * dd; }
 // преграда для зверей и людей: всё, кроме мелочи, съеденного и самих зверей
-function blockAt(x, z, r, self){ const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
+function blockAt(x, z, r, self, jump){   // jump — высота, которую зверь перепрыгивает (заборы, изгороди)
+  const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (!l) continue;
-    for (let k = 0; k < l.length; k++){ const o = l[k], it = o.it; if (o.skip || (it && (it === self || it.got || it.t.al)) || (!o.rc && o.r < .2)) continue; if (occHit(o, x, z, r)) return true; } }
+    for (let k = 0; k < l.length; k++){ const o = l[k], it = o.it; if (o.skip || (it && (it === self || it.got || it.t.al || (jump && it.t.d[1] * it.sc < jump))) || (!o.rc && o.r < .2)) continue; if (occHit(o, x, z, r)) return true; } }
   return false; }
 function occFree(x, z, r){ const i0 = Math.floor((x - r) / OC), i1 = Math.floor((x + r) / OC), j0 = Math.floor((z - r) / OC), j1 = Math.floor((z + r) / OC);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++){ const l = occ.get(i * 4096 + j); if (!l) continue;
@@ -1666,13 +1667,17 @@ function updItems(dt){
           it.th = hx * hx + hz * hz > 64 ? Math.atan2(hx, hz) : Math.random() * TAU; it.spd = al.sp * it.sc * 0.35; } }
       if (it.mv){
         // шаг только туда, где свободно: если прямо нельзя — пробуем вбок, иначе разворот. Застрявшему внутри разрешаем выйти.
-        const ra = .5 * Math.min(it.t.d[0], it.t.d[2]) * it.sc, st = it.spd * dt, inside = it.air > .3 || blockAt(it.x, it.z, ra, it); let ok = false;
+        // вор, который крадётся к кому, перемахивает заборы и изгороди; убегая с добычей — снова обходит
+        const ra = .5 * Math.min(it.t.d[0], it.t.d[2]) * it.sc, st = it.spd * dt, jh = it.ts === 1 ? 1.4 + .3 * it.sc : 0, inside = it.air > .3 || blockAt(it.x, it.z, ra, it, jh); let ok = false;
         for (const tw of [0, .6, -.6, 1.2, -1.2, 2, -2]){ const a = it.th + tw, nx = it.x + Math.sin(a) * st, nz = it.z + Math.cos(a) * st;
-          if (inside || !blockAt(nx, nz, ra, it)){ it.x = nx; it.z = nz; if (tw) it.th = a; ok = true; break; } }
+          if (inside || !blockAt(nx, nz, ra, it, jh)){ it.x = nx; it.z = nz; if (tw) it.th = a; ok = true; break; } }
         if (!ok){ it.th += PI * (.5 + Math.random()); it.tm = Math.min(it.tm, .4); }
+        if (jh || it.jp > 0){ const over = jh && blockAt(it.x + Math.sin(it.th) * .45 * it.sc, it.z + Math.cos(it.th) * .45 * it.sc, ra, it);
+          it.jp = clamp((it.jp || 0) + (over ? dt * 7 : -dt * 4), 0, 1); }
         it.hp += dt * (it.t.bird ? (flee ? 11 : 7) : (flee ? 17 : 9));   // птицы семенят мельче и реже
         if (coast(it.x, it.z) < 2){ it.x *= 0.985; it.z *= 0.985; }
-        hop = Math.abs(Math.sin(it.hp)) * al.hop * it.sc * (flee && !it.t.bird ? 1.7 : 1); }
+        hop = Math.abs(Math.sin(it.hp)) * al.hop * it.sc * (flee && !it.t.bird ? 1.7 : 1);
+        if (it.jp > 0) hop = Math.max(hop, Math.sin(it.jp * H) * 1.25); }   // прыжок через забор
       // птицы: взлёт и посадка, машут крыльями; коты и собаки: галоп с качанием, вдох-выдох, хвост виляет
       if (it.t.bird){ it.stam = clamp((it.stam === undefined ? 1 : it.stam) + (flee ? -dt / 3.5 : dt / 4), 0, 1);
         it.air = clamp((it.air || 0) + (it.airT > 0 ? dt * 3 : -dt * 1.2), 0, 1); if (it.airT > 0){ it.airT -= dt; if (it.airT <= 0) it.airCd = time + 4; }   // после посадки 4 с не взлетает
